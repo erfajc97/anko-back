@@ -32,6 +32,69 @@
 $ npm install
 ```
 
+## Docker Setup
+
+This project includes Docker configuration for easy development and deployment.
+
+### Prerequisites
+
+- Docker and Docker Compose installed on your system
+- Create a `.env` file in the root directory with the following variables:
+
+```bash
+# Database Configuration
+POSTGRES_PASSWORD=your_secure_password
+POSTGRES_USER=anko_user
+POSTGRES_DB=anko
+
+# Application Configuration
+DATABASE_URL=postgresql://anko_user:your_secure_password@postgres:5432/anko
+NODE_ENV=production
+PORT=3000
+```
+
+### Running with Docker
+
+The Docker setup will automatically:
+1. Install dependencies (`npm install`)
+2. Run Prisma migrations (`npx prisma migrate dev --name init`)
+3. Generate Prisma client (`npx prisma generate`)
+4. Seed the database (`npx prisma db seed`)
+5. Build the application (`npm run build`)
+6. Start the application
+
+```bash
+# Build and start all services
+$ docker-compose up --build
+
+# Run in detached mode
+$ docker-compose up -d --build
+
+# Stop all services
+$ docker-compose down
+
+# Stop and remove volumes (this will delete the database data)
+$ docker-compose down -v
+```
+
+### Services
+
+- **Application**: Available at `http://localhost:3000`
+- **PostgreSQL Database**: Available at `localhost:5432`
+
+### Environment Variables
+
+The following environment variables can be customized in your `.env` file:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `POSTGRES_PASSWORD` | `anko_password` | PostgreSQL password |
+| `POSTGRES_USER` | `anko_user` | PostgreSQL username |
+| `POSTGRES_DB` | `anko` | PostgreSQL database name |
+| `DATABASE_URL` | `postgresql://anko_user:anko_password@postgres:5432/anko` | Full database connection URL |
+| `NODE_ENV` | `production` | Node.js environment |
+| `PORT` | `3000` | Application port |
+
 ## Compile and run the project
 
 ```bash

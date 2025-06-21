@@ -40,14 +40,14 @@ export class AuthService {
         { id: userId, email, type },
         {
           secret: this.configService.get<string>('JWT_SECRET'),
-          expiresIn: this.configService.get<string>('JWT_EXPIRES_IN'),
+          expiresIn: this.configService.get<string>('JWT_EXPIRES_IN') || '15m',
         },
       ),
       this.jwtService.signAsync(
         { id: userId, email, type },
         {
           secret: this.configService.get<string>('REFRESH_TOKEN_SECRET'),
-          expiresIn: this.configService.get<string>('REFRESH_TOKEN_EXPIRES_IN'),
+          expiresIn: this.configService.get<string>('REFRESH_TOKEN_EXPIRES_IN') || '7d',
         },
       ),
     ]);
