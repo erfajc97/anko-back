@@ -1,6 +1,11 @@
 import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
+
+async function hashData(data: string): Promise<string> {
+  return bcrypt.hash(data, 10);
+}
 
 async function clearDatabase() {
   await prisma.$transaction(async (tx) => {
@@ -22,7 +27,7 @@ async function main() {
           email: 'john.doe@mail.com',
           firstName: 'John',
           lastName: 'Doe',
-          password: 'qwerty',
+          password: await hashData('qwerty'),
           type: 'ADMIN',
           telephone: '123456789',
         },
@@ -33,7 +38,7 @@ async function main() {
           email: 'jane.doe@mail.com',
           firstName: 'Jane',
           lastName: 'Doe',
-          password: 'qwerty',
+          password: await hashData('qwerty'),
           type: 'USER',
           telephone: '123456789',
         },

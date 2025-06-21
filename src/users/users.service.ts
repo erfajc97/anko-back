@@ -8,10 +8,16 @@ import { User } from './entities/user.entity';
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  create(createUserDto: CreateUserDto): Promise<User> {
-    return this.prisma.user.create({
+  async create(
+    createUserDto: CreateUserDto,
+  ): Promise<{ message: string; data: User }> {
+    const newUser = await this.prisma.user.create({
       data: createUserDto,
     });
+    return {
+      message: 'Usuario creado exitosamente',
+      data: newUser,
+    };
   }
 
   async findAll(
