@@ -15,14 +15,11 @@ COPY . .
 # Install dependencies
 RUN npm install
 
-# Generate Prisma client
-RUN npx prisma generate
-
 # Build application
 RUN npm run build
 
-# Expose port 3000
+# Expose port
 EXPOSE 3000
 
-# Start the application
-CMD ["npm", "run", "start:prod"]
+# Use CMD to run prisma deploy and start the app
+CMD ["sh", "-c", "npm run prisma:deploy && npm run start:prod"]
