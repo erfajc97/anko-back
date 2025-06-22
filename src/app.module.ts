@@ -8,6 +8,13 @@ import { AuthModule } from './auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { OrganizationModule } from './organization/organization.module';
+import { EmailModule } from './email/email.module';
+import { ClassPackagesModule } from './class-packages/class-packages.module';
+import { TeachersModule } from './teachers/teachers.module';
+import { ClassSchedulesModule } from './class-schedules/class-schedules.module';
+import { BookingsModule } from './bookings/bookings.module';
+import { UserPackagesModule } from './user-packages/user-packages.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -17,7 +24,14 @@ import { OrganizationModule } from './organization/organization.module';
     PrismaModule,
     UsersModule,
     AuthModule,
-    OrganizationModule
+    OrganizationModule,
+    EmailModule,
+    ClassPackagesModule,
+    TeachersModule,
+    ClassSchedulesModule,
+    BookingsModule,
+    UserPackagesModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,0 +1,202 @@
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateUserPackageDto } from './dto/create-user-package.dto';
+import { UpdateUserPackageDto } from './dto/update-user-package.dto';
+
+@Injectable()
+export class UserPackagesService {
+  constructor(private prisma: PrismaService) {}
+
+  async create(createUserPackageDto: CreateUserPackageDto) {
+    const { userId, classPackageId, classesRemaining } = createUserPackageDto;
+
+    // Verificar si el usuario existe
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new NotFoundException(`User with ID "${userId}" not found`);
+    }
+
+    // Verificar si el paquete de clase existe
+    const classPackage = await this.prisma.classPackage.findUnique({
+      where: { id: classPackageId },
+    });
+    if (!classPackage) {
+      throw new NotFoundException(
+        `ClassPackage with ID "${classPackageId}" not found`,
+      );
+    }
+
+    // Calcular fecha de expiración
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + classPackage.validityDays);
+
+    return this.prisma.userPackage.create({
+      data: {
+        user: {
+          connect: { id: userId },
+        },
+        classPackage: {
+          connect: { id: classPackageId },
+        },
+        remainingCredits: classesRemaining,
+        expiresAt,
+      },
+      include: {
+        user: true,
+        classPackage: true,
+      },
+    });
+  }
+
+  async findAll(page: number, perPage: number) {
+    const skip = (page - 1) * perPage;
+    const userPackages = await this.prisma.userPackage.findMany({
+      skip,
+      take: perPage,
+      orderBy: {
+        purchasedAt: 'desc',
+      },
+      include: {
+        user: true,
+        classPackage: true,
+      },
+    });
+
+    const total = await this.prisma.userPackage.count();
+    const totalPages = Math.ceil(total / perPage);
+
+    return {
+      content: userPackages,
+      currentPage: page,
+      totalPages,
+      totalItems: total,
+    };
+  }
+
+  async findOne(id: string) {
+    const userPackage = await this.prisma.userPackage.findUnique({
+      where: { id },
+      include: {
+        user: true,
+        classPackage: true,
+      },
+    });
+    if (!userPackage) {
+      throw new NotFoundException(`UserPackage with ID "${id}" not found`);
+    }
+    return userPackage;
+  }
+
+  async findByUser(userId: string, page: number, perPage: number) {
+    const skip = (page - 1) * perPage;
+    const userPackages = await this.prisma.userPackage.findMany({
+      where: { userId },
+      skip,
+      take: perPage,
+      orderBy: {
+        purchasedAt: 'desc',
+      },
+      include: {
+        classPackage: true,
+      },
+    });
+
+    const total = await this.prisma.userPackage.count({
+      where: { userId },
+    });
+    const totalPages = Math.ceil(total / perPage);
+
+    return {
+      content: userPackages,
+      currentPage: page,
+      totalPages,
+      totalItems: total,
+    };
+  }
+
+  async consumeClass(userId: string) {
+    // Buscar un paquete activo del usuario con créditos disponibles y no expirado
+    const userPackage = await this.prisma.userPackage.findFirst({
+      where: {
+        userId,
+        remainingCredits: {
+          gt: 0,
+        },
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
+      orderBy: {
+        purchasedAt: 'asc', // Usar el paquete más antiguo primero
+      },
+    });
+
+    if (!userPackage) {
+      throw new BadRequestException('No available classes in any package');
+    }
+
+    // Consumir una clase
+    return this.prisma.userPackage.update({
+      where: { id: userPackage.id },
+      data: {
+        remainingCredits: userPackage.remainingCredits - 1,
+      },
+      include: {
+        classPackage: true,
+      },
+    });
+  }
+
+  async getAvailableClasses(userId: string) {
+    const userPackages = await this.prisma.userPackage.findMany({
+      where: {
+        userId,
+        remainingCredits: {
+          gt: 0,
+        },
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
+      include: {
+        classPackage: true,
+      },
+    });
+
+    const totalAvailable = userPackages.reduce(
+      (sum, userPackage) => sum + userPackage.remainingCredits,
+      0,
+    );
+
+    return {
+      totalAvailable,
+      packages: userPackages,
+    };
+  }
+
+  update(id: string, updateUserPackageDto: UpdateUserPackageDto) {
+    const { classesRemaining, ...rest } = updateUserPackageDto;
+    const data = { ...rest };
+
+    if (classesRemaining !== undefined) {
+      data['remainingCredits'] = classesRemaining;
+    }
+
+    return this.prisma.userPackage.update({
+      where: { id },
+      data,
+    });
+  }
+
+  remove(id: string) {
+    return this.prisma.userPackage.delete({
+      where: { id },
+    });
+  }
+}
