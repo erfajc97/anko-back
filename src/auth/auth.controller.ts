@@ -51,6 +51,13 @@ export class AuthController {
     return result;
   }
 
+  @Post('verify-email')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  async verifyEmail(@Body('token') token: string) {
+    return this.authService.verifyEmail(token);
+  }
+
   @Post('logout')
   @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.OK)

@@ -25,6 +25,10 @@ model User {
   password  String
   hashedRefreshToken String?
 
+  isVerified                 Boolean  @default(false)
+  verificationToken          String?
+  verificationTokenExpiresAt DateTime?
+
   memberships OrganizationMembership[]
   type        UserType                 @default(USER)
 }

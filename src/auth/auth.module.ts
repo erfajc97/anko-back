@@ -8,12 +8,14 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { AdminGuard } from './guards/admin.guard';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
     PrismaModule,
     UsersModule,
     ConfigModule,
+    EmailModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

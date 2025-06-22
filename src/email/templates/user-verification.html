@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>¡Bienvenido a Anko!</title>
+  <style>
+    body { font-family: sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+    .header { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 20px; }
+    .button { display: inline-block; padding: 10px 20px; margin: 20px 0; background-color: #007bff; color: #ffffff; text-decoration: none; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">¡Bienvenido a Anko, {{name}}!</div>
+    <p>Gracias por registrarte. Estamos muy contentos de tenerte con nosotros.</p>
+    <p>Para completar tu registro y asegurar tu cuenta, por favor, haz clic en el siguiente botón para verificar tu dirección de correo electrónico:</p>
+    <a href="{{verificationLink}}" class="button" style="color: #ffffff;">Verificar mi cuenta</a>
+    <p>Si no te registraste en nuestra plataforma, por favor ignora este correo.</p>
+    <p>Saludos,<br>El equipo de Anko</p>
+  </div>
+</body>
+</html> 

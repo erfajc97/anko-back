@@ -8,6 +8,8 @@ import {
   Delete,
   Query,
   UseGuards,
+  ParseIntPipe,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -24,7 +26,10 @@ export class UsersController {
   }
 
   @Get()
-  findAll(@Query('page') page = 1, @Query('perPage') perPage = 10) {
+  findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('perPage', new DefaultValuePipe(10), ParseIntPipe) perPage: number,
+  ) {
     return this.usersService.findAll(page, perPage);
   }
 
@@ -42,5 +47,19 @@ export class UsersController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
+  }
+
+  @UseGuards(AdminGuard)
+  @Get('organization/:organizationName')
+  findAllByOrganization(
+    @Param('organizationName') organizationName: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('perPage', new DefaultValuePipe(10), ParseIntPipe) perPage: number,
+  ) {
+    return this.usersService.findAllByOrganization(
+      organizationName,
+      page,
+      perPage,
+    );
   }
 }

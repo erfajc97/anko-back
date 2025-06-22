@@ -12,6 +12,8 @@ import { RegisterUserDto } from './dto/register.dto';
 import { UserType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
+import { EmailService } from '../email/email.service';
+import { v4 as uuidv4 } from 'uuid';
 
 type Tokens = {
   accessToken: string;
@@ -24,6 +26,7 @@ export class AuthService {
     private jwtService: JwtService,
     private prisma: PrismaService,
     private configService: ConfigService,
+    private emailService: EmailService,
   ) {}
 
   private async hashData(data: string): Promise<string> {
@@ -47,7 +50,8 @@ export class AuthService {
         { id: userId, email, type },
         {
           secret: this.configService.get<string>('REFRESH_TOKEN_SECRET'),
-          expiresIn: this.configService.get<string>('REFRESH_TOKEN_EXPIRES_IN') || '7d',
+          expiresIn:
+            this.configService.get<string>('REFRESH_TOKEN_EXPIRES_IN') || '7d',
         },
       ),
     ]);
@@ -96,7 +100,8 @@ export class AuthService {
   }
 
   async register(userDto: RegisterUserDto) {
-    const { email, confirmEmail, password } = userDto;
+    const { email, confirmEmail, password, firstName, lastName, telephone } =
+      userDto;
     if (email !== confirmEmail) {
       throw new BadRequestException('Email does not match');
     }
@@ -105,12 +110,37 @@ export class AuthService {
       throw new ConflictException(`Email ${email} already exist`);
     }
 
+    const ankoOrg = await this.prisma.organization.findFirst({
+      where: { name: 'Anko' },
+    });
+
+    if (!ankoOrg) {
+      throw new NotFoundException(
+        'La organización por defecto "Anko" no fue encontrada.',
+      );
+    }
+
     const hashedPassword = await this.hashData(password);
+    const verificationToken = uuidv4();
+    const verificationTokenExpiresAt = new Date(
+      Date.now() + 24 * 60 * 60 * 1000,
+    );
+
     const newUser = await this.prisma.user.create({
       data: {
         email,
         password: hashedPassword,
-        firstName: '',
+        firstName,
+        lastName,
+        telephone,
+        verificationToken,
+        verificationTokenExpiresAt,
+        memberships: {
+          create: {
+            organizationId: ankoOrg.id,
+            role: 'MEMBER',
+          },
+        },
       },
     });
 
@@ -121,13 +151,61 @@ export class AuthService {
     );
     await this.updateRefreshToken(newUser.id, tokens.refreshToken);
 
+    const verificationLink = `https://tu-frontend.com/verify-email?token=${verificationToken}`;
+
+    try {
+      await this.emailService.sendEmail({
+        to: newUser.email,
+        subject: `¡Bienvenido a Anko, ${newUser.firstName}!`,
+        templateName: 'user-verification',
+        replacements: {
+          name: newUser.firstName,
+          verificationLink,
+        },
+      });
+    } catch (emailError) {
+      console.error(
+        `[Registro] No se pudo enviar el correo a ${newUser.email}:`,
+        emailError,
+      );
+    }
+
     return {
-      message: 'Registro exitoso',
+      message:
+        'Registro exitoso. Por favor, revisa tu correo para verificar tu cuenta.',
       data: {
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
       },
     };
+  }
+
+  async verifyEmail(token: string) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        verificationToken: token,
+        verificationTokenExpiresAt: {
+          gte: new Date(),
+        },
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException(
+        'El token de verificación no es válido o ha expirado.',
+      );
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isVerified: true,
+        verificationToken: null,
+        verificationTokenExpiresAt: null,
+      },
+    });
+
+    return { message: 'Correo verificado exitosamente.' };
   }
 
   async logout(userId: string): Promise<{ message: string }> {

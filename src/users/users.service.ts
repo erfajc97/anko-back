@@ -79,4 +79,40 @@ export class UsersService {
       where: { id },
     });
   }
+
+  async findAllByOrganization(
+    organizationName: string,
+    page = 1,
+    perPage = 10,
+  ) {
+    const skip = (page - 1) * perPage;
+    const whereClause = {
+      memberships: {
+        some: {
+          organization: {
+            name: organizationName,
+          },
+        },
+      },
+    };
+
+    const [users, total] = await this.prisma.$transaction([
+      this.prisma.user.findMany({
+        where: whereClause,
+        skip,
+        take: perPage,
+      }),
+      this.prisma.user.count({ where: whereClause }),
+    ]);
+
+    return {
+      items: users,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / perPage),
+        totalItems: total,
+        perPage: perPage,
+      },
+    };
+  }
 }
