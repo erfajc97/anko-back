@@ -14,10 +14,12 @@ import { Public } from './decorators/public.decorator';
 import { RegisterUserDto } from './dto/register.dto';
 import { Response, Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('login')
   @Public()
@@ -29,8 +31,9 @@ export class AuthController {
     const result = await this.authService.login(data);
     response.cookie('refreshToken', result.data.refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV !== 'development', // true en producción
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
     });
     return result;
   }
@@ -56,6 +59,16 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async verifyEmail(@Body('token') token: string) {
     return this.authService.verifyEmail(token);
+  }
+
+  @Post('forgot-password')
+  forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(forgotPasswordDto);
+  }
+
+  @Post('reset-password')
+  resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    return this.authService.resetPassword(resetPasswordDto);
   }
 
   @Post('logout')

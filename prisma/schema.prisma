@@ -29,6 +29,11 @@ model User {
   verificationToken          String?
   verificationTokenExpiresAt DateTime?
 
+  // Campos para reset de contraseña
+  resetPasswordToken          String?
+  resetPasswordTokenExpiresAt DateTime?
+  resetPasswordRequestedAt    DateTime?
+
   memberships OrganizationMembership[]
   type        UserType                 @default(USER)
 

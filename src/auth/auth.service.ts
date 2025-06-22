@@ -9,6 +9,8 @@ import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterUserDto } from './dto/register.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
@@ -150,8 +152,7 @@ export class AuthService {
       newUser.type,
     );
     await this.updateRefreshToken(newUser.id, tokens.refreshToken);
-
-    const verificationLink = `https://tu-frontend.com/verify-email?token=${verificationToken}`;
+    const verificationLink = `${this.configService.get<string>('FRONTEND_URL')}/verify-email?token=${verificationToken}`;
 
     try {
       await this.emailService.sendEmail({
@@ -224,26 +225,142 @@ export class AuthService {
   }
 
   async refresh(userId: string, refreshToken: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user || !user.hashedRefreshToken) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user || !user.hashedRefreshToken)
       throw new ForbiddenException('Access Denied');
-    }
-
-    const rtMatches = await bcrypt.compare(
+    const refreshTokenMatches = await bcrypt.compare(
       refreshToken,
       user.hashedRefreshToken,
     );
-    if (!rtMatches) throw new ForbiddenException('Access Denied');
-
+    if (!refreshTokenMatches) throw new ForbiddenException('Access Denied');
     const tokens = await this.getTokens(user.id, user.email, user.type);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
-
     return {
-      message: 'Token refrescado',
+      message: 'Tokens refreshed successfully',
       data: {
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
       },
+    };
+  }
+
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
+    const { email } = forgotPasswordDto;
+
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      // Por seguridad, no revelamos si el email existe o no
+      return {
+        message:
+          'Si el email existe en nuestra base de datos, recibirás un enlace para restablecer tu contraseña.',
+      };
+    }
+
+    // Generar token único para reset de contraseña
+    const resetToken = uuidv4();
+    const resetTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+
+    // Guardar token en la base de datos
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetPasswordToken: resetToken,
+        resetPasswordTokenExpiresAt: resetTokenExpiresAt,
+        resetPasswordRequestedAt: new Date(),
+      },
+    });
+
+    // Construir enlace de reset
+    const resetLink = `${this.configService.get<string>('FRONTEND_URL')}/reset-password?token=${resetToken}`;
+
+    try {
+      await this.emailService.sendEmail({
+        to: user.email,
+        subject: 'Restablecer Contraseña - Anko',
+        templateName: 'password-reset',
+        replacements: {
+          name: user.firstName,
+          resetLink,
+        },
+      });
+
+      return {
+        message:
+          'Si el email existe en nuestra base de datos, recibirás un enlace para restablecer tu contraseña.',
+      };
+    } catch (emailError) {
+      console.error(
+        `[Reset Password] No se pudo enviar el correo a ${user.email}:`,
+        emailError,
+      );
+
+      // Limpiar token si falla el envío
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          resetPasswordToken: null,
+          resetPasswordTokenExpiresAt: null,
+          resetPasswordRequestedAt: null,
+        },
+      });
+
+      throw new BadRequestException(
+        'No se pudo enviar el correo de restablecimiento. Por favor, intenta nuevamente.',
+      );
+    }
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    const { token, newPassword } = resetPasswordDto;
+
+    // Buscar usuario con el token válido
+    const user = await this.prisma.user.findFirst({
+      where: {
+        resetPasswordToken: token,
+        resetPasswordTokenExpiresAt: {
+          gte: new Date(),
+        },
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException(
+        'El token de restablecimiento no es válido o ha expirado.',
+      );
+    }
+
+    // Verificar que la nueva contraseña sea diferente a la actual
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    if (isSamePassword) {
+      throw new BadRequestException(
+        'La nueva contraseña debe ser diferente a la actual.',
+      );
+    }
+
+    // Hashear nueva contraseña
+    const hashedPassword = await this.hashData(newPassword);
+
+    // Actualizar contraseña y limpiar tokens
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        resetPasswordToken: null,
+        resetPasswordTokenExpiresAt: null,
+        resetPasswordRequestedAt: null,
+        // Invalidar refresh tokens por seguridad
+        hashedRefreshToken: null,
+      },
+    });
+
+    return {
+      message:
+        'Contraseña restablecida exitosamente. Puedes iniciar sesión con tu nueva contraseña.',
     };
   }
 }
