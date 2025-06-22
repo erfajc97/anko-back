@@ -1,0 +1,41 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # Set up SSH key for EC2 connection
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+        env:
+          EC2_SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+
+      # Add EC2 to known hosts to avoid SSH warnings
+      - name: Add EC2 to known hosts
+        run: |
+          ssh-keyscan -H 3.88.17.47 >> ~/.ssh/known_hosts
+
+      # SSH into EC2 and run commands
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@3.88.17.47 << 'EOF'
+            cd anko-back
+            git pull origin main
+            docker-compose down
+            docker system prune -a --volumes -f
+            docker-compose build
+            docker-compose up -d
+          EOF
