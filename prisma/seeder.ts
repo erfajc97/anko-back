@@ -12,6 +12,7 @@ async function clearDatabase() {
     await tx.organizationMembership.deleteMany();
     await tx.organization.deleteMany();
     await tx.user.deleteMany();
+    await tx.classPackage.deleteMany();
   });
 }
 
