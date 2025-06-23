@@ -1,10 +1,11 @@
 import {
   IsString,
   IsNotEmpty,
-  IsDateString,
   IsInt,
   Min,
   IsUUID,
+  IsDateString,
+  Matches,
 } from 'class-validator';
 
 export class CreateClassScheduleDto {
@@ -17,10 +18,16 @@ export class CreateClassScheduleDto {
   title: string;
 
   @IsDateString()
-  startTime: string;
+  startDate: string;
 
   @IsDateString()
-  endTime: string;
+  endDate: string;
+
+  @Matches(/^\d{2}:\d{2}$/)
+  startHour: string; // formato HH:mm
+
+  @Matches(/^\d{2}:\d{2}$/)
+  endHour: string; // formato HH:mm
 
   @IsInt()
   @Min(1)

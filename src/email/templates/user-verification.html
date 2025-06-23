@@ -5,20 +5,86 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>¡Bienvenido a Anko!</title>
   <style>
-    body { font-family: sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
-    .header { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 20px; }
-    .button { display: inline-block; padding: 10px 20px; margin: 20px 0; background-color: #007bff; color: #ffffff; text-decoration: none; border-radius: 5px; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+      line-height: 1.6;
+      color: #333;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 30px;
+      background-color: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .logo {
+      color: #B77167;
+      font-family: Georgia, 'Times New Roman', Times, serif;
+      font-style: italic;
+      font-size: 52px;
+      letter-spacing: 3px;
+    }
+    .content h1 {
+      color: #333;
+      font-size: 24px;
+      font-weight: 600;
+    }
+    .content p {
+      margin-bottom: 20px;
+      font-size: 16px;
+    }
+    .button-container {
+      text-align: center;
+      margin: 30px 0;
+    }
+    .button {
+      display: inline-block;
+      padding: 14px 28px;
+      background-color: #B77167;
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
+    }
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #777;
+      margin-top: 30px;
+    }
+    .footer p {
+      margin: 5px 0;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="header">¡Bienvenido a Anko, {{name}}!</div>
-    <p>Gracias por registrarte. Estamos muy contentos de tenerte con nosotros.</p>
-    <p>Para completar tu registro y asegurar tu cuenta, por favor, haz clic en el siguiente botón para verificar tu dirección de correo electrónico:</p>
-    <a href="{{verificationLink}}" class="button" style="color: #ffffff;">Verificar mi cuenta</a>
-    <p>Si no te registraste en nuestra plataforma, por favor ignora este correo.</p>
-    <p>Saludos,<br>El equipo de Anko</p>
+    <div class="header">
+      <div class="logo">ANKO</div>
+    </div>
+    <div class="content">
+      <h1>¡Bienvenido a Anko, {{name}}!</h1>
+      <p>Gracias por registrarte. Estamos muy contentos de tenerte con nosotros.</p>
+      <p>Para completar tu registro y asegurar tu cuenta, por favor, haz clic en el siguiente botón para verificar tu dirección de correo electrónico:</p>
+      <div class="button-container">
+        <a href="{{verificationLink}}" class="button" style="color: #ffffff;">Verificar mi cuenta</a>
+      </div>
+      <p>Si no te registraste en nuestra plataforma, por favor ignora este correo.</p>
+      <p>Saludos,<br>El equipo de Anko</p>
+    </div>
+    <div class="footer">
+      <p>&copy; 2024 Anko Studio. Todos los derechos reservados.</p>
+      <p>Anko Studio, Guayaquil, Ecuador</p>
+    </div>
   </div>
 </body>
 </html> 

@@ -15,6 +15,9 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AdminGuard } from 'auth/guards/admin.guard';
+import { JwtAuthGuard } from 'auth/guards/jwt-auth.guard';
+import { CurrentUser } from 'auth/decorators/current-user.decorator';
+import { User } from './entities/user.entity';
 
 @Controller('users')
 export class UsersController {
@@ -31,6 +34,12 @@ export class UsersController {
     @Query('perPage', new DefaultValuePipe(10), ParseIntPipe) perPage: number,
   ) {
     return this.usersService.findAll(page, perPage);
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  getCurrentUser(@CurrentUser() user: User) {
+    return this.usersService.getCurrentUser(user.id);
   }
 
   @Get(':id')

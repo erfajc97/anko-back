@@ -17,6 +17,7 @@ datasource db {
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
+  cedula    String?  @unique
   telephone String?
   firstName String
   lastName  String?
@@ -86,6 +87,7 @@ model Teacher {
 model ClassPackage {
   id           String   @id @default(uuid())
   name         String   @unique
+  description  String?
   price        Float
   classCredits Int
   validityDays Int

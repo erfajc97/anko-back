@@ -22,10 +22,10 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class UserPackagesController {
   constructor(private readonly userPackagesService: UserPackagesService) {}
 
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() createUserPackageDto: CreateUserPackageDto) {
-    return this.userPackagesService.create(createUserPackageDto);
+  create(@Request() req, @Body() createUserPackageDto: CreateUserPackageDto) {
+    return this.userPackagesService.create(req.user, createUserPackageDto);
   }
 
   @UseGuards(AdminGuard)

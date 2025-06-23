@@ -1,21 +1,90 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UserResponseDto } from './dto/user-response.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { User } from './entities/user.entity';
+import { EmailService } from '../email/email.service';
+import { ConfigService } from '@nestjs/config';
+import * as bcrypt from 'bcrypt';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private emailService: EmailService,
+    private configService: ConfigService,
+  ) {}
 
   async create(
     createUserDto: CreateUserDto,
   ): Promise<{ message: string; data: User }> {
-    const newUser = await this.prisma.user.create({
-      data: createUserDto,
+    // Verificar si el email ya existe
+    const existingUserByEmail = await this.prisma.user.findUnique({
+      where: { email: createUserDto.email },
     });
+
+    if (existingUserByEmail) {
+      throw new ConflictException('El email ya está registrado');
+    }
+
+    // Verificar si la cédula ya existe
+    const existingUserByCedula = await this.prisma.user.findUnique({
+      where: { cedula: createUserDto.cedula },
+    });
+
+    if (existingUserByCedula) {
+      throw new ConflictException('La cédula ya está registrada');
+    }
+
+    // Hash de la contraseña
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+
+    // Generar token de verificación
+    const verificationToken = uuidv4();
+    const verificationTokenExpiresAt = new Date(
+      Date.now() + 24 * 60 * 60 * 1000, // 24 horas
+    );
+
+    const newUser = await this.prisma.user.create({
+      data: {
+        ...createUserDto,
+        password: hashedPassword,
+        verificationToken,
+        verificationTokenExpiresAt,
+      },
+    });
+
+    // Enviar email de verificación
+    const verificationLink = `${this.configService.get<string>(
+      'FRONTEND_URL',
+    )}/verify-email/${verificationToken}`;
+
+    try {
+      await this.emailService.sendEmail({
+        to: newUser.email,
+        subject: `¡Bienvenido a Anko, ${newUser.firstName}!`,
+        templateName: 'user-verification',
+        replacements: {
+          name: newUser.firstName,
+          verificationLink,
+        },
+      });
+    } catch (emailError) {
+      console.error(
+        `[Creación de usuario] No se pudo enviar el correo a ${newUser.email}:`,
+        emailError,
+      );
+    }
+
     return {
-      message: 'Usuario creado exitosamente',
+      message:
+        'Usuario creado exitosamente. Se ha enviado un correo de verificación.',
       data: newUser,
     };
   }
@@ -59,10 +128,16 @@ export class UsersService {
     });
   }
 
-  update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+    const data = { ...updateUserDto };
+
+    if (data.password) {
+      data.password = await bcrypt.hash(data.password, 10);
+    }
+
     return this.prisma.user.update({
       where: { id },
-      data: updateUserDto,
+      data,
     });
   }
 
@@ -113,6 +188,33 @@ export class UsersService {
         totalItems: total,
         perPage: perPage,
       },
+    };
+  }
+
+  async getCurrentUser(
+    userId: string,
+  ): Promise<{ message: string; data: UserResponseDto }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        cedula: true,
+        telephone: true,
+        firstName: true,
+        lastName: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`Usuario con id ${userId} no encontrado`);
+    }
+
+    return {
+      message: 'Información del usuario obtenida exitosamente',
+      data: user,
     };
   }
 }

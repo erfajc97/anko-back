@@ -10,12 +10,12 @@ import {
   Query,
   ParseIntPipe,
   DefaultValuePipe,
-  BadRequestException,
 } from '@nestjs/common';
 import { ClassSchedulesService } from './class-schedules.service';
 import { CreateClassScheduleDto } from './dto/create-class-schedule.dto';
 import { UpdateClassScheduleDto } from './dto/update-class-schedule.dto';
 import { AdminGuard } from '../auth/guards/admin.guard';
+import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('class-schedules')
 export class ClassSchedulesController {
@@ -45,22 +45,10 @@ export class ClassSchedulesController {
     return this.classSchedulesService.findAvailableSchedules(page, perPage);
   }
 
+  @Public()
   @Get('calendar')
-  findSchedulesByDateRange(
-    @Query('startDate') startDate: string,
-    @Query('endDate') endDate: string,
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('perPage', new DefaultValuePipe(50), ParseIntPipe) perPage: number,
-  ) {
-    if (!startDate || !endDate) {
-      throw new BadRequestException('startDate and endDate are required');
-    }
-    return this.classSchedulesService.findSchedulesByDateRange(
-      startDate,
-      endDate,
-      page,
-      perPage,
-    );
+  findSchedulesByDateRange() {
+    return this.classSchedulesService.findSchedulesByDateRange();
   }
 
   @UseGuards(AdminGuard)

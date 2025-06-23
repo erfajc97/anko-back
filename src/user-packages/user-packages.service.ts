@@ -6,20 +6,48 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserPackageDto } from './dto/create-user-package.dto';
 import { UpdateUserPackageDto } from './dto/update-user-package.dto';
+import { UserType } from '@prisma/client';
+
+interface AuthenticatedUser {
+  id: string;
+  email: string;
+  type: UserType;
+}
 
 @Injectable()
 export class UserPackagesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createUserPackageDto: CreateUserPackageDto) {
-    const { userId, classPackageId, classesRemaining } = createUserPackageDto;
+  async create(
+    authenticatedUser: AuthenticatedUser,
+    createUserPackageDto: CreateUserPackageDto,
+  ) {
+    const { classPackageId } = createUserPackageDto;
+    let targetUserId = authenticatedUser.id;
 
-    // Verificar si el usuario existe
+    // Si el usuario es ADMIN, puede especificar un email o un userId
+    if (authenticatedUser.type === UserType.ADMIN) {
+      if (createUserPackageDto.email) {
+        const userByEmail = await this.prisma.user.findUnique({
+          where: { email: createUserPackageDto.email },
+        });
+        if (!userByEmail) {
+          throw new NotFoundException(
+            `No se encontró un usuario con el correo ${createUserPackageDto.email}`,
+          );
+        }
+        targetUserId = userByEmail.id;
+      } else if (createUserPackageDto.userId) {
+        targetUserId = createUserPackageDto.userId;
+      }
+    }
+
+    // Verificar si el usuario al que se le asignará el paquete existe
     const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: targetUserId },
     });
     if (!user) {
-      throw new NotFoundException(`User with ID "${userId}" not found`);
+      throw new NotFoundException(`User with ID "${targetUserId}" not found`);
     }
 
     // Verificar si el paquete de clase existe
@@ -32,19 +60,20 @@ export class UserPackagesService {
       );
     }
 
-    // Calcular fecha de expiración
+    // Calcular fecha de expiración y créditos restantes desde el paquete
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + classPackage.validityDays);
+    const remainingCredits = classPackage.classCredits;
 
     return this.prisma.userPackage.create({
       data: {
         user: {
-          connect: { id: userId },
+          connect: { id: targetUserId },
         },
         classPackage: {
           connect: { id: classPackageId },
         },
-        remainingCredits: classesRemaining,
+        remainingCredits,
         expiresAt,
       },
       include: {
@@ -181,11 +210,15 @@ export class UserPackagesService {
   }
 
   update(id: string, updateUserPackageDto: UpdateUserPackageDto) {
-    const { classesRemaining, ...rest } = updateUserPackageDto;
-    const data = { ...rest };
+    const { remainingCredits, expiresAt } = updateUserPackageDto;
+    const data: { remainingCredits?: number; expiresAt?: Date } = {};
 
-    if (classesRemaining !== undefined) {
-      data['remainingCredits'] = classesRemaining;
+    if (remainingCredits !== undefined) {
+      data.remainingCredits = remainingCredits;
+    }
+
+    if (expiresAt) {
+      data.expiresAt = new Date(expiresAt);
     }
 
     return this.prisma.userPackage.update({

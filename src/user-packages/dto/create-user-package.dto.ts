@@ -1,16 +1,15 @@
-import { IsUUID, IsNotEmpty, IsInt, Min } from 'class-validator';
+import { IsUUID, IsNotEmpty, IsOptional, IsEmail } from 'class-validator';
 
 export class CreateUserPackageDto {
   @IsUUID()
-  @IsNotEmpty()
-  userId: string;
+  @IsOptional()
+  userId?: string;
+
+  @IsEmail()
+  @IsOptional()
+  email?: string;
 
   @IsUUID()
   @IsNotEmpty()
   classPackageId: string;
-
-  @IsInt()
-  @Min(1)
-  @IsNotEmpty()
-  classesRemaining: number;
 }

@@ -1,4 +1,12 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateUserPackageDto } from './create-user-package.dto';
+import { IsInt, IsOptional, Min, IsDateString } from 'class-validator';
 
-export class UpdateUserPackageDto extends PartialType(CreateUserPackageDto) {}
+export class UpdateUserPackageDto {
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  remainingCredits?: number;
+
+  @IsDateString()
+  @IsOptional()
+  expiresAt?: string;
+}

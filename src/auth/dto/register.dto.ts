@@ -4,6 +4,7 @@ import {
   IsNotEmpty,
   IsString,
   IsOptional,
+  Length,
 } from 'class-validator';
 
 export class RegisterUserDto {
@@ -13,6 +14,11 @@ export class RegisterUserDto {
 
   @IsEmail({}, { message: 'Confirmation email must be valid' })
   confirmEmail: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Cédula es requerida' })
+  @Length(10, 10, { message: 'La cédula debe tener exactamente 10 dígitos' })
+  cedula: string;
 
   @IsString()
   @IsNotEmpty({ message: 'Password is required' })

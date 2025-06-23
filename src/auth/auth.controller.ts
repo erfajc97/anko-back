@@ -3,6 +3,7 @@ import {
   Controller,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
   UseGuards,
   Res,
@@ -16,6 +17,7 @@ import { Response, Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -54,21 +56,40 @@ export class AuthController {
     return result;
   }
 
-  @Post('verify-email')
+  @Post('verify-email/:token')
   @Public()
   @HttpCode(HttpStatus.OK)
-  async verifyEmail(@Body('token') token: string) {
+  async verifyEmail(@Param('token') token: string) {
     return this.authService.verifyEmail(token);
   }
 
   @Post('forgot-password')
+  @Public()
+  @HttpCode(HttpStatus.OK)
   forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
     return this.authService.forgotPassword(forgotPasswordDto);
   }
 
-  @Post('reset-password')
-  resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
-    return this.authService.resetPassword(resetPasswordDto);
+  @Post('reset-password/:token')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  resetPassword(
+    @Param('token') token: string,
+    @Body() resetPasswordDto: Omit<ResetPasswordDto, 'token'>,
+  ) {
+    return this.authService.resetPassword({ ...resetPasswordDto, token });
+  }
+
+  @Post('change-password')
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(HttpStatus.OK)
+  changePassword(
+    @Req() req: Request,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    // @ts-expect-error user no está en el tipo base de Request
+    const userId = req.user.id;
+    return this.authService.changePassword(userId, changePasswordDto);
   }
 
   @Post('logout')

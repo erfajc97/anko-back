@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
@@ -16,6 +17,7 @@ import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
 import { v4 as uuidv4 } from 'uuid';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 type Tokens = {
   accessToken: string;
@@ -102,14 +104,28 @@ export class AuthService {
   }
 
   async register(userDto: RegisterUserDto) {
-    const { email, confirmEmail, password, firstName, lastName, telephone } =
-      userDto;
+    const {
+      email,
+      confirmEmail,
+      password,
+      firstName,
+      lastName,
+      telephone,
+      cedula,
+    } = userDto;
     if (email !== confirmEmail) {
       throw new BadRequestException('Email does not match');
     }
     const foundUser = await this.prisma.user.findUnique({ where: { email } });
     if (foundUser) {
       throw new ConflictException(`Email ${email} already exist`);
+    }
+    // Validar cédula duplicada
+    const foundCedula = await this.prisma.user.findUnique({
+      where: { cedula },
+    });
+    if (foundCedula) {
+      throw new ConflictException(`La cédula ${cedula} ya está registrada`);
     }
 
     const ankoOrg = await this.prisma.organization.findFirst({
@@ -131,6 +147,7 @@ export class AuthService {
     const newUser = await this.prisma.user.create({
       data: {
         email,
+        cedula,
         password: hashedPassword,
         firstName,
         lastName,
@@ -152,7 +169,9 @@ export class AuthService {
       newUser.type,
     );
     await this.updateRefreshToken(newUser.id, tokens.refreshToken);
-    const verificationLink = `${this.configService.get<string>('FRONTEND_URL')}/verify-email?token=${verificationToken}`;
+    const verificationLink = `${this.configService.get<string>(
+      'FRONTEND_URL',
+    )}/verify-email/${verificationToken}`;
 
     try {
       await this.emailService.sendEmail({
@@ -276,7 +295,9 @@ export class AuthService {
     });
 
     // Construir enlace de reset
-    const resetLink = `${this.configService.get<string>('FRONTEND_URL')}/reset-password?token=${resetToken}`;
+    const resetLink = `${this.configService.get<string>(
+      'FRONTEND_URL',
+    )}/reset-password/${resetToken}`;
 
     try {
       await this.emailService.sendEmail({
@@ -295,7 +316,7 @@ export class AuthService {
       };
     } catch (emailError) {
       console.error(
-        `[Reset Password] No se pudo enviar el correo a ${user.email}:`,
+        `[Olvido de Contraseña] Fallo al intentar enviar correo a ${email}:`,
         emailError,
       );
 
@@ -362,5 +383,43 @@ export class AuthService {
       message:
         'Contraseña restablecida exitosamente. Puedes iniciar sesión con tu nueva contraseña.',
     };
+  }
+
+  async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
+    const { currentPassword, newPassword } = changePasswordDto;
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new UnauthorizedException('Usuario no encontrado.');
+    }
+
+    const passwordMatches = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
+
+    if (!passwordMatches) {
+      throw new ForbiddenException('La contraseña actual es incorrecta.');
+    }
+
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    if (isSamePassword) {
+      throw new BadRequestException(
+        'La nueva contraseña no puede ser igual a la actual.',
+      );
+    }
+
+    const hashedPassword = await this.hashData(newPassword);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        password: hashedPassword,
+        // Por seguridad, invalidamos los refresh tokens al cambiar la contraseña
+        hashedRefreshToken: null,
+      },
+    });
+
+    return { message: 'Contraseña actualizada exitosamente.' };
   }
 }

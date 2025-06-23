@@ -8,7 +8,15 @@ export class ClassSchedulesService {
   constructor(private prisma: PrismaService) {}
 
   async create(createClassScheduleDto: CreateClassScheduleDto) {
-    const { teacherId, ...rest } = createClassScheduleDto;
+    const {
+      teacherId,
+      title,
+      startDate,
+      endDate,
+      startHour,
+      endHour,
+      maxCapacity,
+    } = createClassScheduleDto;
 
     // Verificar si el profesor existe
     const teacher = await this.prisma.teacher.findUnique({
@@ -18,14 +26,66 @@ export class ClassSchedulesService {
       throw new NotFoundException(`Teacher with ID "${teacherId}" not found`);
     }
 
-    return this.prisma.classSchedule.create({
-      data: {
-        ...rest,
-        teacher: {
-          connect: { id: teacherId },
-        },
-      },
-    });
+    // Calcular los días del rango
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setHours(0, 0, 0, 0);
+    const days: Date[] = [];
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      days.push(new Date(d));
+    }
+
+    // Calcular las horas de la jornada
+    const [startHourNum, startMinNum] = startHour.split(':').map(Number);
+    const [endHourNum, endMinNum] = endHour.split(':').map(Number);
+
+    const createdSchedules = [];
+    for (const day of days) {
+      let currentHour = startHourNum;
+      while (currentHour < endHourNum) {
+        const slotStart = new Date(day);
+        slotStart.setHours(currentHour, startMinNum, 0, 0);
+        const slotEnd = new Date(day);
+        slotEnd.setHours(currentHour + 1, startMinNum, 0, 0);
+        if (
+          slotEnd.getHours() > endHourNum ||
+          (slotEnd.getHours() === endHourNum &&
+            slotEnd.getMinutes() > endMinNum)
+        )
+          break;
+
+        // Validar solapamiento de horarios para el mismo profesor
+        const overlapping = await this.prisma.classSchedule.findFirst({
+          where: {
+            teacherId,
+            OR: [
+              {
+                startTime: { lt: slotEnd },
+                endTime: { gt: slotStart },
+              },
+            ],
+          },
+        });
+        if (overlapping) {
+          throw new Error(
+            `El profesor ya tiene un horario asignado en ese rango de horas el día ${slotStart.toISOString().slice(0, 10)} de ${startHour} a ${endHour}.`,
+          );
+        }
+
+        const schedule = await this.prisma.classSchedule.create({
+          data: {
+            teacher: { connect: { id: teacherId } },
+            title,
+            startTime: slotStart,
+            endTime: slotEnd,
+            maxCapacity,
+          },
+        });
+        createdSchedules.push(schedule);
+        currentHour++;
+      }
+    }
+    return createdSchedules;
   }
 
   async findAll(page: number, perPage: number) {
@@ -63,13 +123,13 @@ export class ClassSchedulesService {
     return classSchedule;
   }
 
-  update(id: string, updateClassScheduleDto: UpdateClassScheduleDto) {
-    const { teacherId, ...rest } = updateClassScheduleDto;
-    const data = { ...rest };
+  async update(id: string, updateClassScheduleDto: UpdateClassScheduleDto) {
+    const { teacherId, title, maxCapacity } = updateClassScheduleDto;
+    const data: any = {};
 
-    if (teacherId) {
-      data['teacher'] = { connect: { id: teacherId } };
-    }
+    if (title) data.title = title;
+    if (maxCapacity) data.maxCapacity = maxCapacity;
+    if (teacherId) data.teacher = { connect: { id: teacherId } };
 
     return this.prisma.classSchedule.update({
       where: { id },
@@ -143,92 +203,82 @@ export class ClassSchedulesService {
     };
   }
 
-  async findSchedulesByDateRange(
-    startDate: string,
-    endDate: string,
-    page: number,
-    perPage: number,
-  ) {
-    const skip = (page - 1) * perPage;
+  async findSchedulesByDateRange(startDate?: string, endDate?: string) {
+    // Calcular rango de fechas si no se proveen
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const twoWeeksLater = new Date(today);
+    twoWeeksLater.setDate(today.getDate() + 14);
+
+    const rangeStart = startDate ? new Date(startDate) : today;
+    const rangeEnd = endDate ? new Date(endDate) : twoWeeksLater;
+
+    // Traer todos los horarios en el rango, incluyendo bookings
     const classSchedules = await this.prisma.classSchedule.findMany({
       where: {
         startTime: {
-          gte: new Date(startDate),
-          lte: new Date(endDate),
+          gte: rangeStart,
+          lt: rangeEnd,
         },
       },
-      skip,
-      take: perPage,
       orderBy: {
         startTime: 'asc',
       },
       include: {
         teacher: true,
-        bookings: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true,
-              },
-            },
-          },
-        },
+        bookings: true,
       },
     });
 
-    // Enriquecer con información de disponibilidad
-    const schedulesWithAvailability = classSchedules.map((schedule) => {
-      const currentBookings = schedule.bookings.length;
-      const availableSpots = schedule.maxCapacity - currentBookings;
-      const isFull = availableSpots <= 0;
-      const utilizationRate = (currentBookings / schedule.maxCapacity) * 100;
+    // Agrupar por profesor
+    const teacherMap = new Map();
+    for (const schedule of classSchedules) {
+      const teacherId = schedule.teacher.id;
+      const teacherName = `${schedule.teacher.firstName} ${schedule.teacher.lastName}`;
+      if (!teacherMap.has(teacherId)) {
+        teacherMap.set(teacherId, {
+          teacherId,
+          teacherName,
+          slots: [],
+        });
+      }
+      // Dividir el horario en bloques de 1 hora
+      let slotStart = new Date(schedule.startTime);
+      const slotEnd = new Date(schedule.endTime);
+      while (slotStart < slotEnd) {
+        const nextSlot = new Date(slotStart);
+        nextSlot.setHours(nextSlot.getHours() + 1);
+        if (nextSlot > slotEnd) break;
+        // Calcular cuántas reservas existen para este bloque horario (todas las reservas del horario aplican a todos los bloques)
+        const slotBookingsCount = schedule.bookings.length;
+        const availableSpots = schedule.maxCapacity - slotBookingsCount;
+        const isFull = availableSpots <= 0;
+        teacherMap.get(teacherId).slots.push({
+          scheduleId: schedule.id,
+          date: slotStart.toISOString().slice(0, 10),
+          startTime: slotStart.toISOString().slice(11, 16),
+          endTime: nextSlot.toISOString().slice(11, 16),
+          title: schedule.title,
+          availableSpots,
+          maxCapacity: schedule.maxCapacity,
+          isFull,
+        });
+        slotStart = nextSlot;
+      }
+    }
 
-      return {
-        id: schedule.id,
-        title: schedule.title,
-        teacher: {
-          id: schedule.teacher.id,
-          name: `${schedule.teacher.firstName} ${schedule.teacher.lastName}`,
-        },
-        startTime: schedule.startTime,
-        endTime: schedule.endTime,
-        maxCapacity: schedule.maxCapacity,
-        currentBookings,
-        availableSpots,
-        isFull,
-        utilizationRate,
-        duration: Math.round(
-          (new Date(schedule.endTime).getTime() -
-            new Date(schedule.startTime).getTime()) /
-            (1000 * 60),
-        ),
-        bookings: schedule.bookings,
-      };
-    });
+    // Ordenar los slots por fecha y hora
+    const result = Array.from(teacherMap.values()).map((teacher) => ({
+      ...teacher,
+      slots: teacher.slots.sort((a, b) => {
+        if (a.date === b.date) {
+          return a.startTime.localeCompare(b.startTime);
+        }
+        return a.date.localeCompare(b.date);
+      }),
+    }));
 
-    const total = await this.prisma.classSchedule.count({
-      where: {
-        startTime: {
-          gte: new Date(startDate),
-          lte: new Date(endDate),
-        },
-      },
-    });
-    const totalPages = Math.ceil(total / perPage);
-
-    return {
-      content: schedulesWithAvailability,
-      currentPage: page,
-      totalPages,
-      totalItems: total,
-      dateRange: {
-        startDate,
-        endDate,
-      },
-    };
+    return result;
   }
 
   remove(id: string) {
