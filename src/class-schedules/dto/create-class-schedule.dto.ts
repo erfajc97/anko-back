@@ -4,8 +4,7 @@ import {
   IsInt,
   Min,
   IsUUID,
-  IsDateString,
-  Matches,
+  IsISO8601,
 } from 'class-validator';
 
 export class CreateClassScheduleDto {
@@ -17,17 +16,13 @@ export class CreateClassScheduleDto {
   @IsNotEmpty()
   title: string;
 
-  @IsDateString()
-  startDate: string;
+  @IsISO8601()
+  @IsNotEmpty()
+  startTime: string;
 
-  @IsDateString()
-  endDate: string;
-
-  @Matches(/^\d{2}:\d{2}$/)
-  startHour: string; // formato HH:mm
-
-  @Matches(/^\d{2}:\d{2}$/)
-  endHour: string; // formato HH:mm
+  @IsISO8601()
+  @IsNotEmpty()
+  endTime: string;
 
   @IsInt()
   @Min(1)
