@@ -46,18 +46,23 @@ export class ClassSchedulesService {
       // Definir el rango de horas para este día
       const dayStart = new Date(day);
       const dayEnd = new Date(day);
+
       if (day.getTime() === days[0].getTime()) {
         // Primer día: usar la hora de start
         dayStart.setHours(start.getHours(), start.getMinutes(), 0, 0);
       } else {
-        dayStart.setHours(0, 0, 0, 0);
+        // Días intermedios: usar la hora de inicio de la jornada
+        dayStart.setHours(start.getHours(), start.getMinutes(), 0, 0);
       }
+
       if (day.getTime() === days[days.length - 1].getTime()) {
         // Último día: usar la hora de end
         dayEnd.setHours(end.getHours(), end.getMinutes(), 0, 0);
       } else {
-        dayEnd.setHours(23, 59, 59, 999);
+        // Días intermedios: usar la hora de fin de la jornada
+        dayEnd.setHours(end.getHours(), end.getMinutes(), 0, 0);
       }
+
       // Crear bloques de 1 hora
       let current = new Date(dayStart);
       while (current < dayEnd) {
@@ -234,15 +239,7 @@ export class ClassSchedulesService {
       'viernes',
       'sábado',
     ];
-    // Definir rango de horas fijo
-    const hourStart = 6;
-    const hourEnd = 22;
-    const hoursArr = [];
-    for (let h = hourStart; h < hourEnd; h++) {
-      const start = h.toString().padStart(2, '0') + ':00';
-      const end = (h + 1).toString().padStart(2, '0') + ':00';
-      hoursArr.push({ start, end });
-    }
+
     for (let i = 0; i < 14; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
@@ -278,6 +275,16 @@ export class ClassSchedulesService {
         bookings: true,
       },
     });
+
+    // Definir rango de horas fijo
+    const hourStart = 6;
+    const hourEnd = 22;
+    const hoursArr = [];
+    for (let h = hourStart; h < hourEnd; h++) {
+      const start = h.toString().padStart(2, '0') + ':00';
+      const end = (h + 1).toString().padStart(2, '0') + ':00';
+      hoursArr.push({ start, end });
+    }
 
     // Indexar bloques por día y hora
     const blocksMap = {};
