@@ -52,6 +52,12 @@ export class ClassSchedulesController {
   }
 
   @UseGuards(AdminGuard)
+  @Get('calendar/admin')
+  findSchedulesByDateRangeForAdmin() {
+    return this.classSchedulesService.findSchedulesByDateRangeForAdmin();
+  }
+
+  @UseGuards(AdminGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.classSchedulesService.findOne(id);

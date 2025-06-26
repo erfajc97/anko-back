@@ -7,6 +7,13 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { UserPackagesService } from '../user-packages/user-packages.service';
+import { UserType } from '@prisma/client';
+
+interface AuthenticatedUser {
+  id: string;
+  email: string;
+  type: UserType;
+}
 
 @Injectable()
 export class BookingsService {
@@ -15,8 +22,24 @@ export class BookingsService {
     private userPackagesService: UserPackagesService,
   ) {}
 
-  async create(createBookingDto: CreateBookingDto, userId: string) {
-    const { classScheduleId } = createBookingDto;
+  async create(createBookingDto: CreateBookingDto, user: AuthenticatedUser) {
+    const { classScheduleId, userEmail } = createBookingDto;
+
+    // Determinar el usuario objetivo
+    let targetUserId = user.id;
+
+    // Si es admin y se especifica un email, buscar ese usuario
+    if (user.type === UserType.ADMIN && userEmail) {
+      const targetUser = await this.prisma.user.findUnique({
+        where: { email: userEmail },
+      });
+      if (!targetUser) {
+        throw new NotFoundException(
+          `Usuario con email "${userEmail}" no encontrado`,
+        );
+      }
+      targetUserId = targetUser.id;
+    }
 
     // Verificar si el horario de clase existe
     const classSchedule = await this.prisma.classSchedule.findUnique({
@@ -35,7 +58,7 @@ export class BookingsService {
     // Verificar si el usuario ya tiene una reserva para esta clase
     const existingBooking = await this.prisma.booking.findFirst({
       where: {
-        userId,
+        userId: targetUserId,
         classScheduleId,
       },
     });
@@ -53,12 +76,12 @@ export class BookingsService {
     }
 
     // Consumir una clase del paquete del usuario
-    await this.userPackagesService.consumeClass(userId);
+    await this.userPackagesService.consumeClass(targetUserId);
 
     return this.prisma.booking.create({
       data: {
         user: {
-          connect: { id: userId },
+          connect: { id: targetUserId },
         },
         classSchedule: {
           connect: { id: classScheduleId },
@@ -160,9 +183,40 @@ export class BookingsService {
     });
   }
 
-  remove(id: string) {
-    return this.prisma.booking.delete({
+  async remove(id: string, user: AuthenticatedUser) {
+    // Buscar la reserva
+    const booking = await this.prisma.booking.findUnique({
+      where: { id },
+      include: {
+        user: true,
+        classSchedule: true,
+      },
+    });
+
+    if (!booking) {
+      throw new NotFoundException(`Booking with ID "${id}" not found`);
+    }
+
+    // Verificar permisos: solo el usuario propietario o un admin puede cancelar
+    if (user.type !== UserType.ADMIN && booking.userId !== user.id) {
+      throw new BadRequestException(
+        'No tienes permisos para cancelar esta reserva',
+      );
+    }
+
+    // Eliminar la reserva
+    await this.prisma.booking.delete({
       where: { id },
     });
+
+    // Devolver un crédito al usuario
+    try {
+      await this.userPackagesService.refundClass(booking.userId);
+    } catch (error) {
+      console.error('Error refunding class credit:', error);
+      // No lanzamos el error para no interrumpir la cancelación
+    }
+
+    return { message: 'Reserva cancelada exitosamente' };
   }
 }

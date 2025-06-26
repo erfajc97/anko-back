@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>¡Paquete Adquirido Exitosamente!</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+      line-height: 1.6;
+      color: #333;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 30px;
+      background-color: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .logo {
+      color: #B77167;
+      font-family: Georgia, 'Times New Roman', Times, serif;
+      font-style: italic;
+      font-size: 52px;
+      letter-spacing: 3px;
+    }
+    .content h1 {
+      color: #333;
+      font-size: 24px;
+      font-weight: 600;
+      text-align: center;
+    }
+    .content p {
+      margin-bottom: 20px;
+      font-size: 16px;
+    }
+    .package-details {
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 25px 0;
+      border-left: 4px solid #B77167;
+    }
+    .package-details h3 {
+      color: #B77167;
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-size: 18px;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #e9ecef;
+    }
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+    .detail-label {
+      font-weight: 600;
+      color: #555;
+    }
+    .detail-value {
+      color: #333;
+    }
+    .success-message {
+      background-color: #d4edda;
+      border: 1px solid #c3e6cb;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 20px 0;
+      color: #155724;
+    }
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #777;
+      margin-top: 30px;
+    }
+    .footer p {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">ANKO</div>
+    </div>
+    <div class="content">
+      <h1>¡Compra Exitosa!</h1>
+      <p>Hola {{userName}},</p>
+      <p>¡Felicitaciones! Tu compra ha sido procesada exitosamente. Ya tienes acceso a tu nuevo paquete de clases.</p>
+      
+      <div class="success-message">
+        <strong>✅ Transacción completada</strong><br>
+        Tu pago ha sido confirmado y tu paquete está activo.
+      </div>
+
+      <div class="package-details">
+        <h3>📦 Detalles del Paquete</h3>
+        <div class="detail-row">
+          <span class="detail-label">Nombre del Paquete:</span>
+          <span class="detail-value">{{packageName}}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Créditos de Clases:</span>
+          <span class="detail-value">{{classCredits}} clases</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Válido hasta:</span>
+          <span class="detail-value">{{expiryDate}}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Precio:</span>
+          <span class="detail-value">${{price}}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">ID de Transacción:</span>
+          <span class="detail-value">{{transactionId}}</span>
+        </div>
+      </div>
+
+      <p>Ya puedes reservar tus clases usando los créditos de tu nuevo paquete. ¡Disfruta de tu experiencia en Anko!</p>
+      
+      <p>Si tienes alguna pregunta, no dudes en contactarnos.</p>
+      
+      <p>Saludos,<br>El equipo de Anko</p>
+    </div>
+    <div class="footer">
+      <p>&copy; 2024 Anko Studio. Todos los derechos reservados.</p>
+      <p>Anko Studio, Guayaquil, Ecuador</p>
+    </div>
+  </div>
+</body>
+</html> 

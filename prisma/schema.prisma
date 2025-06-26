@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/prisma"
@@ -15,40 +9,33 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  cedula    String?  @unique
-  telephone String?
-  firstName String
-  lastName  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  password  String
-  hashedRefreshToken String?
-
-  isVerified                 Boolean  @default(false)
-  verificationToken          String?
-  verificationTokenExpiresAt DateTime?
-
-  // Campos para reset de contraseña
+  id                          String                   @id @default(uuid())
+  email                       String                   @unique
+  cedula                      String?                  @unique
+  telephone                   String?
+  firstName                   String
+  lastName                    String?
+  createdAt                   DateTime                 @default(now())
+  updatedAt                   DateTime                 @updatedAt
+  password                    String
+  hashedRefreshToken          String?
+  isVerified                  Boolean                  @default(false)
+  verificationToken           String?
+  verificationTokenExpiresAt  DateTime?
   resetPasswordToken          String?
   resetPasswordTokenExpiresAt DateTime?
   resetPasswordRequestedAt    DateTime?
-
-  memberships OrganizationMembership[]
-  type        UserType                 @default(USER)
-
-  // Relaciones para el sistema de clases
-  userPackages UserPackage[]
-  bookings     Booking[]
-  paymentTransactions PaymentTransaction[]
+  type                        UserType                 @default(USER)
+  bookings                    Booking[]
+  memberships                 OrganizationMembership[]
+  userPackages                UserPackage[]
+  paymentTransactions         PaymentTransaction[]
 }
 
 model Organization {
-  id        String   @id @default(uuid())
-  name      String
-  createdAt DateTime @default(now())
-
+  id          String                   @id @default(uuid())
+  name        String
+  createdAt   DateTime                 @default(now())
   memberships OrganizationMembership[]
 }
 
@@ -58,43 +45,30 @@ model OrganizationMembership {
   userId         String
   role           OrganizationMemberRole @default(MEMBER)
   createdAt      DateTime               @default(now())
-
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, userId])
 }
 
-enum OrganizationMemberRole {
-  MANAGER
-  MEMBER
-}
-
-enum UserType {
-  USER
-  ADMIN
-}
-
 model Teacher {
-  id        String   @id @default(uuid())
+  id        String          @id @default(uuid())
   firstName String
   lastName  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
   schedules ClassSchedule[]
 }
 
 model ClassPackage {
-  id           String   @id @default(uuid())
-  name         String   @unique
+  id           String        @id @default(uuid())
+  name         String        @unique
   description  String?
   price        Float
   classCredits Int
   validityDays Int
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   userPackages UserPackage[]
   paymentTransactions PaymentTransaction[]
 }
@@ -107,23 +81,21 @@ model UserPackage {
   expiresAt        DateTime
   purchasedAt      DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
-
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  classPackage ClassPackage @relation(fields: [classPackageId], references: [id], onDelete: Cascade)
+  classPackage     ClassPackage @relation(fields: [classPackageId], references: [id], onDelete: Cascade)
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model ClassSchedule {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   teacherId   String
   title       String
   startTime   DateTime
   endTime     DateTime
-  maxCapacity Int      @default(8)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  teacher  Teacher   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  bookings Booking[]
+  maxCapacity Int       @default(8)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  bookings    Booking[]
+  teacher     Teacher   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 }
 
 model Booking {
@@ -133,16 +105,10 @@ model Booking {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   status          BookingStatus @default(ACTIVE)
-
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  classSchedule ClassSchedule @relation(fields: [classScheduleId], references: [id], onDelete: Cascade)
+  classSchedule   ClassSchedule @relation(fields: [classScheduleId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, classScheduleId])
-}
-
-enum BookingStatus {
-  ACTIVE
-  CANCELLED
 }
 
 model PaymentTransaction {
@@ -159,4 +125,19 @@ model PaymentTransaction {
   package ClassPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
 
   @@map("payment_transactions")
+}
+
+enum OrganizationMemberRole {
+  MANAGER
+  MEMBER
+}
+
+enum UserType {
+  USER
+  ADMIN
+}
+
+enum BookingStatus {
+  ACTIVE
+  CANCELLED
 }

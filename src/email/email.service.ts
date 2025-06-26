@@ -11,6 +11,16 @@ interface EmailOptions {
   replacements: Record<string, string>;
 }
 
+interface PackagePurchaseEmailData {
+  userEmail: string;
+  userName: string;
+  packageName: string;
+  classCredits: number;
+  expiryDate: string;
+  price: number;
+  transactionId: string;
+}
+
 @Injectable()
 export class EmailService {
   private readonly resend: Resend;
@@ -63,5 +73,44 @@ export class EmailService {
       console.error(`Failed to send email: ${error.message}`);
       throw new Error('Failed to send email.');
     }
+  }
+
+  async sendPackagePurchaseEmail(data: PackagePurchaseEmailData) {
+    const replacements = {
+      userName: data.userName,
+      packageName: data.packageName,
+      classCredits: data.classCredits.toString(),
+      expiryDate: data.expiryDate,
+      price: data.price.toString(),
+      transactionId: data.transactionId,
+    };
+
+    return this.sendEmail({
+      to: data.userEmail,
+      subject: '¡Paquete Adquirido Exitosamente! - Anko Studio',
+      templateName: 'package-purchased',
+      replacements,
+    });
+  }
+
+  async sendContactFormEmail(data: {
+    name: string;
+    email: string;
+    phone: string;
+    message: string;
+  }) {
+    const to = this.configService.get<string>('CONTACT_RECEIVER_EMAIL');
+    const replacements = {
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      message: data.message,
+    };
+    return this.sendEmail({
+      to,
+      subject: 'Nuevo mensaje de contacto desde la landing',
+      templateName: 'contact-form',
+      replacements,
+    });
   }
 }

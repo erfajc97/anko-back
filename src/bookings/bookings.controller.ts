@@ -25,7 +25,7 @@ export class BookingsController {
   @UseGuards(JwtAuthGuard)
   @Post()
   create(@Body() createBookingDto: CreateBookingDto, @Request() req) {
-    return this.bookingsService.create(createBookingDto, req.user.id);
+    return this.bookingsService.create(createBookingDto, req.user);
   }
 
   @UseGuards(AdminGuard)
@@ -61,8 +61,7 @@ export class BookingsController {
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    // Aquí podrías agregar lógica para verificar que el usuario solo puede cancelar sus propias reservas
-    return this.bookingsService.remove(id);
+  remove(@Param('id') id: string, @Request() req) {
+    return this.bookingsService.remove(id, req.user);
   }
 }

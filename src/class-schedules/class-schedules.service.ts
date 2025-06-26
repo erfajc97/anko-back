@@ -333,6 +333,161 @@ export class ClassSchedulesService {
     return { days: daysArr, hours: hoursArr.map((h) => h.start) };
   }
 
+  async findSchedulesByDateRangeForAdmin(startDate?: string, endDate?: string) {
+    // Calcular rango de fechas si no se proveen
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const daysArr = [];
+    const weekDays = [
+      'domingo',
+      'lunes',
+      'martes',
+      'miércoles',
+      'jueves',
+      'viernes',
+      'sábado',
+    ];
+
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      daysArr.push({
+        iso: d.toISOString().slice(0, 10),
+        weekday: weekDays[d.getDay()],
+        day: d.getDate(),
+        month: d.getMonth() + 1,
+        year: d.getFullYear(),
+        blocks: [],
+      });
+    }
+
+    const rangeStart = startDate ? new Date(startDate) : today;
+    const rangeEnd = endDate
+      ? new Date(endDate)
+      : new Date(today.getTime() + 13 * 24 * 60 * 60 * 1000);
+    rangeEnd.setHours(23, 59, 59, 999);
+
+    // Traer todos los horarios en el rango, incluyendo bookings con información completa de usuarios
+    const classSchedules = await this.prisma.classSchedule.findMany({
+      where: {
+        startTime: {
+          gte: rangeStart,
+          lte: rangeEnd,
+        },
+      },
+      orderBy: {
+        startTime: 'asc',
+      },
+      include: {
+        teacher: true,
+        bookings: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                telephone: true,
+                cedula: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Obtener créditos disponibles para todos los usuarios que tienen reservas
+    const userIds = new Set();
+    classSchedules.forEach((schedule) => {
+      schedule.bookings.forEach((booking) => {
+        userIds.add(booking.user.id);
+      });
+    });
+
+    const userPackages = await this.prisma.userPackage.findMany({
+      where: {
+        userId: { in: [...userIds] as string[] },
+        remainingCredits: { gt: 0 },
+        expiresAt: { gt: new Date() },
+      },
+      include: {
+        classPackage: true,
+      },
+    });
+
+    // Crear mapa de créditos por usuario
+    const userCreditsMap = {};
+    userPackages.forEach((userPackage) => {
+      if (!userCreditsMap[userPackage.userId]) {
+        userCreditsMap[userPackage.userId] = 0;
+      }
+      userCreditsMap[userPackage.userId] += userPackage.remainingCredits;
+    });
+
+    // Definir rango de horas fijo
+    const hourStart = 6;
+    const hourEnd = 22;
+    const hoursArr = [];
+    for (let h = hourStart; h < hourEnd; h++) {
+      const start = h.toString().padStart(2, '0') + ':00';
+      const end = (h + 1).toString().padStart(2, '0') + ':00';
+      hoursArr.push({ start, end });
+    }
+
+    // Indexar bloques por día y hora
+    const blocksMap = {};
+    for (const schedule of classSchedules) {
+      let slotStart = new Date(schedule.startTime);
+      const slotEnd = new Date(schedule.endTime);
+      while (slotStart < slotEnd) {
+        const nextSlot = new Date(slotStart);
+        nextSlot.setHours(nextSlot.getHours() + 1);
+        if (nextSlot > slotEnd) break;
+        const slotDateIso = slotStart.toISOString().slice(0, 10);
+        const slotStartHour = slotStart.toISOString().slice(11, 16);
+        if (!blocksMap[slotDateIso]) blocksMap[slotDateIso] = {};
+        blocksMap[slotDateIso][slotStartHour] = {
+          scheduleId: schedule.id,
+          teacherId: schedule.teacher.id,
+          teacherName: `${schedule.teacher.firstName} ${schedule.teacher.lastName}`,
+          title: schedule.title,
+          startTime: slotStartHour,
+          endTime: nextSlot.toISOString().slice(11, 16),
+          availableSpots: schedule.maxCapacity - schedule.bookings.length,
+          maxCapacity: schedule.maxCapacity,
+          isFull: schedule.maxCapacity - schedule.bookings.length <= 0,
+          libre: false,
+          bookings: schedule.bookings.map((booking) => ({
+            id: booking.id,
+            userId: booking.user.id,
+            userName:
+              `${booking.user.firstName} ${booking.user.lastName || ''}`.trim(),
+            userEmail: booking.user.email,
+            userTelephone: booking.user.telephone,
+            userCedula: booking.user.cedula,
+            availableCredits: userCreditsMap[booking.user.id] || 0,
+          })),
+        };
+        slotStart = nextSlot;
+      }
+    }
+
+    // Llenar los bloques de cada día con el rango fijo de horas
+    // SOLO incluir bloques que tienen horarios (no los libres)
+    for (const day of daysArr) {
+      for (const hour of hoursArr) {
+        const block = blocksMap[day.iso]?.[hour.start];
+        if (block) {
+          day.blocks.push(block);
+        }
+        // No agregar bloques libres para admin
+      }
+    }
+
+    return { days: daysArr, hours: hoursArr.map((h) => h.start) };
+  }
+
   remove(id: string) {
     return this.prisma.classSchedule.delete({
       where: { id },

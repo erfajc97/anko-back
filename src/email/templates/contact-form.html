@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Nuevo mensaje de contacto</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 30px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0001; padding: 30px; }
+    h2 { color: #B77167; }
+    .info { margin-bottom: 20px; }
+    .label { font-weight: bold; color: #555; }
+    .value { color: #222; }
+    .message { background: #f8f9fa; border-left: 4px solid #B77167; padding: 15px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Nuevo mensaje de contacto</h2>
+    <div class="info"><span class="label">Nombre:</span> <span class="value">{{name}}</span></div>
+    <div class="info"><span class="label">Email:</span> <span class="value">{{email}}</span></div>
+    <div class="info"><span class="label">Teléfono:</span> <span class="value">{{phone}}</span></div>
+    <div class="info message"><span class="label">Mensaje:</span><br>{{message}}</div>
+  </div>
+</body>
+</html> 

@@ -22,14 +22,12 @@ export class PaymentsController {
     body: {
       packageId: string;
       clientTransactionId: string;
-      amount: number;
     },
   ) {
     return this.paymentsService.createPaymentTransaction(
       req.user.id,
       body.packageId,
       body.clientTransactionId,
-      body.amount,
     );
   }
 

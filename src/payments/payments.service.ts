@@ -1,21 +1,22 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserPackagesService } from '../user-packages/user-packages.service';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class PaymentsService {
   constructor(
     private prisma: PrismaService,
     private userPackagesService: UserPackagesService,
+    private emailService: EmailService,
   ) {}
 
   async createPaymentTransaction(
     userId: string,
     packageId: string,
     clientTransactionId: string,
-    amount: number,
   ) {
-    // Verificar que el usuario y el paquete existen
+    // Verificar que el usuario existe
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
@@ -23,6 +24,7 @@ export class PaymentsService {
       throw new NotFoundException(`User with ID "${userId}" not found`);
     }
 
+    // Verificar que el paquete existe y obtener su precio
     const package_ = await this.prisma.classPackage.findUnique({
       where: { id: packageId },
     });
@@ -30,13 +32,13 @@ export class PaymentsService {
       throw new NotFoundException(`Package with ID "${packageId}" not found`);
     }
 
-    // Crear la transacción pendiente
+    // Crear la transacción pendiente usando el precio del paquete
     const transaction = await this.prisma.paymentTransaction.create({
       data: {
         userId,
         packageId,
         clientTransactionId,
-        amount,
+        amount: package_.price,
         status: 'pending',
       },
       include: {
@@ -87,6 +89,10 @@ export class PaymentsService {
   ) {
     const transaction = await this.prisma.paymentTransaction.findUnique({
       where: { clientTransactionId },
+      include: {
+        user: true,
+        package: true,
+      },
     });
 
     if (!transaction) {
@@ -112,13 +118,48 @@ export class PaymentsService {
 
     // Si el pago se completó, asignar el paquete al usuario
     if (status === 'completed') {
-      await this.userPackagesService.create(
-        {
-          userId: transaction.userId,
-          packageId: transaction.packageId,
-        },
-        transaction.userId,
-      );
+      // Obtener la información del usuario para crear el AuthenticatedUser
+      const user = await this.prisma.user.findUnique({
+        where: { id: transaction.userId },
+      });
+
+      if (user) {
+        await this.userPackagesService.create(
+          {
+            id: user.id,
+            email: user.email,
+            type: user.type,
+          },
+          {
+            classPackageId: transaction.packageId,
+          },
+        );
+
+        // Enviar email de confirmación de compra
+        try {
+          const expiresAt = new Date();
+          expiresAt.setDate(
+            expiresAt.getDate() + transaction.package.validityDays,
+          );
+
+          await this.emailService.sendPackagePurchaseEmail({
+            userEmail: user.email,
+            userName: `${user.firstName} ${user.lastName || ''}`.trim(),
+            packageName: transaction.package.name,
+            classCredits: transaction.package.classCredits,
+            expiryDate: expiresAt.toLocaleDateString('es-ES', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            }),
+            price: transaction.amount.toNumber(),
+            transactionId: clientTransactionId,
+          });
+        } catch (error) {
+          console.error('Error sending package purchase email:', error);
+          // No lanzamos el error para no interrumpir el proceso
+        }
+      }
     }
 
     return updatedTransaction;

@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserPackageDto } from './dto/create-user-package.dto';
 import { UpdateUserPackageDto } from './dto/update-user-package.dto';
 import { UserType } from '@prisma/client';
+import { EmailService } from '../email/email.service';
 
 interface AuthenticatedUser {
   id: string;
@@ -16,7 +17,10 @@ interface AuthenticatedUser {
 
 @Injectable()
 export class UserPackagesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private emailService: EmailService,
+  ) {}
 
   async create(
     authenticatedUser: AuthenticatedUser,
@@ -65,7 +69,7 @@ export class UserPackagesService {
     expiresAt.setDate(expiresAt.getDate() + classPackage.validityDays);
     const remainingCredits = classPackage.classCredits;
 
-    return this.prisma.userPackage.create({
+    const userPackage = await this.prisma.userPackage.create({
       data: {
         user: {
           connect: { id: targetUserId },
@@ -81,6 +85,28 @@ export class UserPackagesService {
         classPackage: true,
       },
     });
+
+    // Enviar email de confirmación
+    try {
+      await this.emailService.sendPackagePurchaseEmail({
+        userEmail: user.email,
+        userName: `${user.firstName} ${user.lastName || ''}`.trim(),
+        packageName: classPackage.name,
+        classCredits: classPackage.classCredits,
+        expiryDate: expiresAt.toLocaleDateString('es-ES', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        }),
+        price: classPackage.price,
+        transactionId: `ADMIN-${Date.now()}`, // Para asignaciones de admin
+      });
+    } catch (error) {
+      console.error('Error sending package purchase email:', error);
+      // No lanzamos el error para no interrumpir la creación del paquete
+    }
+
+    return userPackage;
   }
 
   async findAll(page: number, perPage: number) {
@@ -175,6 +201,41 @@ export class UserPackagesService {
       where: { id: userPackage.id },
       data: {
         remainingCredits: userPackage.remainingCredits - 1,
+      },
+      include: {
+        classPackage: true,
+      },
+    });
+  }
+
+  async refundClass(userId: string) {
+    // Buscar un paquete activo del usuario que no esté lleno y no expirado
+    const userPackage = await this.prisma.userPackage.findFirst({
+      where: {
+        userId,
+        remainingCredits: {
+          lt: 20, // Asumiendo que el máximo es 20 créditos
+        },
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
+      orderBy: {
+        purchasedAt: 'desc', // Usar el paquete más reciente primero
+      },
+    });
+
+    if (!userPackage) {
+      throw new BadRequestException(
+        'No suitable package found to refund credit',
+      );
+    }
+
+    // Devolver una clase
+    return this.prisma.userPackage.update({
+      where: { id: userPackage.id },
+      data: {
+        remainingCredits: userPackage.remainingCredits + 1,
       },
       include: {
         classPackage: true,
