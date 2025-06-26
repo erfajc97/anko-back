@@ -41,6 +41,7 @@ model User {
   // Relaciones para el sistema de clases
   userPackages UserPackage[]
   bookings     Booking[]
+  paymentTransactions PaymentTransaction[]
 }
 
 model Organization {
@@ -95,6 +96,7 @@ model ClassPackage {
   updatedAt    DateTime @updatedAt
 
   userPackages UserPackage[]
+  paymentTransactions PaymentTransaction[]
 }
 
 model UserPackage {
@@ -141,4 +143,20 @@ model Booking {
 enum BookingStatus {
   ACTIVE
   CANCELLED
+}
+
+model PaymentTransaction {
+  id                  String   @id @default(cuid())
+  userId              String
+  packageId           String
+  clientTransactionId String   @unique
+  amount              Decimal
+  status              String   @default("pending") // pending, completed, failed
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package ClassPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@map("payment_transactions")
 }

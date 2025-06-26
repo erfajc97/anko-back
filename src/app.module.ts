@@ -15,6 +15,7 @@ import { ClassSchedulesModule } from './class-schedules/class-schedules.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { UserPackagesModule } from './user-packages/user-packages.module';
 import { ReportsModule } from './reports/reports.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -22,16 +23,17 @@ import { ReportsModule } from './reports/reports.module';
       isGlobal: true,
     }),
     PrismaModule,
-    UsersModule,
     AuthModule,
+    UsersModule,
     OrganizationModule,
-    EmailModule,
     ClassPackagesModule,
     TeachersModule,
     ClassSchedulesModule,
     BookingsModule,
     UserPackagesModule,
     ReportsModule,
+    EmailModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [
