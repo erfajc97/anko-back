@@ -92,6 +92,7 @@ export class UsersService {
   async findAll(
     page = 1,
     perPage = 10,
+    search?: string,
   ): Promise<{
     items: User[];
     pagination: {
@@ -103,12 +104,15 @@ export class UsersService {
   }> {
     const skip = (page - 1) * perPage;
 
+    const whereClause = search ? { email: { contains: search } } : undefined;
+
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
+        where: whereClause,
         skip,
         take: perPage,
       }),
-      this.prisma.user.count(),
+      this.prisma.user.count({ where: whereClause }),
     ]);
 
     return {

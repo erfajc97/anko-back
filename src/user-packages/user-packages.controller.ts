@@ -39,12 +39,8 @@ export class UserPackagesController {
 
   @UseGuards(JwtAuthGuard)
   @Get('my-packages')
-  findMyPackages(
-    @Request() req,
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('perPage', new DefaultValuePipe(10), ParseIntPipe) perPage: number,
-  ) {
-    return this.userPackagesService.findByUser(req.user.id, page, perPage);
+  findMyPackages(@Request() req) {
+    return this.userPackagesService.findAllByUserSorted(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)

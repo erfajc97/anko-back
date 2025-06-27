@@ -293,4 +293,20 @@ export class UserPackagesService {
       where: { id },
     });
   }
+
+  async findAllByUserSorted(userId: string) {
+    const userPackages = await this.prisma.userPackage.findMany({
+      where: { userId },
+      orderBy: {
+        purchasedAt: 'desc',
+      },
+      include: {
+        classPackage: true,
+      },
+    });
+    return {
+      totalItems: userPackages.length,
+      items: userPackages,
+    };
+  }
 }

@@ -219,4 +219,26 @@ export class BookingsService {
 
     return { message: 'Reserva cancelada exitosamente' };
   }
+
+  async findAllByUserSorted(userId: string) {
+    const bookings = await this.prisma.booking.findMany({
+      where: { userId },
+      orderBy: {
+        classSchedule: {
+          startTime: 'asc',
+        },
+      },
+      include: {
+        classSchedule: {
+          include: {
+            teacher: true,
+          },
+        },
+      },
+    });
+    return {
+      totalItems: bookings.length,
+      items: bookings,
+    };
+  }
 }

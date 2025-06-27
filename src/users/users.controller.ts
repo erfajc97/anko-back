@@ -32,8 +32,9 @@ export class UsersController {
   findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('perPage', new DefaultValuePipe(10), ParseIntPipe) perPage: number,
+    @Query('search') search?: string,
   ) {
-    return this.usersService.findAll(page, perPage);
+    return this.usersService.findAll(page, perPage, search);
   }
 
   @Get('me')

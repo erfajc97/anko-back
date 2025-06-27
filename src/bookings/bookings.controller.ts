@@ -39,12 +39,8 @@ export class BookingsController {
 
   @UseGuards(JwtAuthGuard)
   @Get('my-bookings')
-  findMyBookings(
-    @Request() req,
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('perPage', new DefaultValuePipe(10), ParseIntPipe) perPage: number,
-  ) {
-    return this.bookingsService.findByUser(req.user.id, page, perPage);
+  findMyBookings(@Request() req) {
+    return this.bookingsService.findAllByUserSorted(req.user.id);
   }
 
   @UseGuards(AdminGuard)
