@@ -101,6 +101,25 @@ export class UserPackagesService {
         price: classPackage.price,
         transactionId: `ADMIN-${Date.now()}`, // Para asignaciones de admin
       });
+
+      // Enviar notificación al admin
+      await this.emailService.sendAdminPackageNotification({
+        userName: `${user.firstName} ${user.lastName || ''}`.trim(),
+        userEmail: user.email,
+        userTelephone: user.telephone || 'No especificado',
+        userCedula: user.cedula || 'No especificado',
+        packageName: classPackage.name,
+        classCredits: classPackage.classCredits,
+        price: classPackage.price,
+        transactionId: `ADMIN-${Date.now()}`,
+        purchaseDate: new Date().toLocaleDateString('es-ES', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+      });
     } catch (error) {
       console.error('Error sending package purchase email:', error);
       // No lanzamos el error para no interrumpir la creación del paquete

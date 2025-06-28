@@ -21,6 +21,18 @@ interface PackagePurchaseEmailData {
   transactionId: string;
 }
 
+interface AdminPackageNotificationData {
+  userName: string;
+  userEmail: string;
+  userTelephone: string;
+  userCedula: string;
+  packageName: string;
+  classCredits: number;
+  price: number;
+  transactionId: string;
+  purchaseDate: string;
+}
+
 @Injectable()
 export class EmailService {
   private readonly resend: Resend;
@@ -89,6 +101,29 @@ export class EmailService {
       to: data.userEmail,
       subject: '¡Paquete Adquirido Exitosamente! - Anko Studio',
       templateName: 'package-purchased',
+      replacements,
+    });
+  }
+
+  async sendAdminPackageNotification(data: AdminPackageNotificationData) {
+    const adminEmail = this.configService.get<string>('CONTACT_RECEIVER_EMAIL');
+
+    const replacements = {
+      userName: data.userName,
+      userEmail: data.userEmail,
+      userTelephone: data.userTelephone,
+      userCedula: data.userCedula,
+      packageName: data.packageName,
+      classCredits: data.classCredits.toString(),
+      price: data.price.toString(),
+      transactionId: data.transactionId,
+      purchaseDate: data.purchaseDate,
+    };
+
+    return this.sendEmail({
+      to: adminEmail,
+      subject: 'Nueva Adquisición de Paquete - Anko Studio',
+      templateName: 'admin-package-notification',
       replacements,
     });
   }

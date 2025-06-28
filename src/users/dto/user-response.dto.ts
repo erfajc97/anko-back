@@ -5,6 +5,7 @@ export class UserResponseDto {
   telephone: string;
   firstName: string;
   lastName: string;
+  isVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

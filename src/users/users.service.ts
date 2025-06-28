@@ -216,6 +216,7 @@ export class UsersService {
         telephone: true,
         firstName: true,
         lastName: true,
+        isVerified: true,
         createdAt: true,
         updatedAt: true,
       },

@@ -155,6 +155,25 @@ export class PaymentsService {
             price: transaction.amount.toNumber(),
             transactionId: clientTransactionId,
           });
+
+          // Enviar notificación al admin
+          await this.emailService.sendAdminPackageNotification({
+            userName: `${user.firstName} ${user.lastName || ''}`.trim(),
+            userEmail: user.email,
+            userTelephone: user.telephone || 'No especificado',
+            userCedula: user.cedula || 'No especificado',
+            packageName: transaction.package.name,
+            classCredits: transaction.package.classCredits,
+            price: transaction.amount.toNumber(),
+            transactionId: clientTransactionId,
+            purchaseDate: new Date().toLocaleDateString('es-ES', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            }),
+          });
         } catch (error) {
           console.error('Error sending package purchase email:', error);
           // No lanzamos el error para no interrumpir el proceso

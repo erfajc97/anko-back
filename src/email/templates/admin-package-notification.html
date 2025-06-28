@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nueva Adquisición de Paquete - Anko</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+      line-height: 1.6;
+      color: #333;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 30px;
+      background-color: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .logo {
+      color: #B77167;
+      font-family: Georgia, 'Times New Roman', Times, serif;
+      font-style: italic;
+      font-size: 52px;
+      letter-spacing: 3px;
+    }
+    .content h1 {
+      color: #333;
+      font-size: 24px;
+      font-weight: 600;
+      text-align: center;
+    }
+    .content p {
+      margin-bottom: 20px;
+      font-size: 16px;
+    }
+    .notification-box {
+      background-color: #e3f2fd;
+      border: 1px solid #2196f3;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 25px 0;
+    }
+    .user-details {
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 25px 0;
+      border-left: 4px solid #B77167;
+    }
+    .user-details h3 {
+      color: #B77167;
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-size: 18px;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #e9ecef;
+    }
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+    .detail-label {
+      font-weight: 600;
+      color: #555;
+    }
+    .detail-value {
+      color: #333;
+    }
+    .package-info {
+      background-color: #fff3e0;
+      border: 1px solid #ff9800;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 25px 0;
+    }
+    .package-info h3 {
+      color: #f57c00;
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-size: 18px;
+    }
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #777;
+      margin-top: 30px;
+    }
+    .footer p {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">ANKO</div>
+    </div>
+    <div class="content">
+      <h1>Nueva Adquisición de Paquete</h1>
+      
+      <div class="notification-box">
+        <strong>🔔 Notificación de Compra</strong><br>
+        Un usuario ha adquirido un paquete de clases en Anko Studio.
+      </div>
+
+      <div class="user-details">
+        <h3>👤 Información del Usuario</h3>
+        <div class="detail-row">
+          <span class="detail-label">Nombre:</span>
+          <span class="detail-value">{{userName}}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Email:</span>
+          <span class="detail-value">{{userEmail}}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Teléfono:</span>
+          <span class="detail-value">{{userTelephone}}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Cédula:</span>
+          <span class="detail-value">{{userCedula}}</span>
+        </div>
+      </div>
+
+      <div class="package-info">
+        <h3>📦 Paquete Adquirido</h3>
+        <div class="detail-row">
+          <span class="detail-label">Nombre del Paquete:</span>
+          <span class="detail-value">{{packageName}}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Créditos de Clases:</span>
+          <span class="detail-value">{{classCredits}} clases</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Precio:</span>
+          <span class="detail-value">${{price}}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">ID de Transacción:</span>
+          <span class="detail-value">{{transactionId}}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Fecha de Compra:</span>
+          <span class="detail-value">{{purchaseDate}}</span>
+        </div>
+      </div>
+
+      <p>El usuario ya ha recibido su correo de confirmación y puede comenzar a reservar clases.</p>
+      
+      <p>Saludos,<br>El equipo de Anko</p>
+    </div>
+    <div class="footer">
+      <p>&copy; 2024 Anko Studio. Todos los derechos reservados.</p>
+      <p>Anko Studio, Guayaquil, Ecuador</p>
+    </div>
+  </div>
+</body>
+</html> 
