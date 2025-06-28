@@ -488,7 +488,66 @@ export class ClassSchedulesService {
     return { days: daysArr, hours: hoursArr.map((h) => h.start) };
   }
 
-  remove(id: string) {
+  async remove(id: string) {
+    // Buscar el horario con sus reservas
+    const classSchedule = await this.prisma.classSchedule.findUnique({
+      where: { id },
+      include: {
+        bookings: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+
+    if (!classSchedule) {
+      throw new NotFoundException(`ClassSchedule with ID "${id}" not found`);
+    }
+
+    // Si hay reservas, devolver los créditos a los usuarios
+    if (classSchedule.bookings.length > 0) {
+      const userIds = classSchedule.bookings.map((booking) => booking.userId);
+
+      // Buscar paquetes activos de los usuarios
+      const userPackages = await this.prisma.userPackage.findMany({
+        where: {
+          userId: { in: userIds },
+          remainingCredits: { gt: 0 },
+          expiresAt: { gt: new Date() },
+        },
+        orderBy: {
+          purchasedAt: 'asc', // Priorizar paquetes más antiguos
+        },
+      });
+
+      // Agrupar paquetes por usuario
+      const userPackagesMap = {};
+      userPackages.forEach((userPackage) => {
+        if (!userPackagesMap[userPackage.userId]) {
+          userPackagesMap[userPackage.userId] = [];
+        }
+        userPackagesMap[userPackage.userId].push(userPackage);
+      });
+
+      // Devolver créditos a cada usuario
+      for (const booking of classSchedule.bookings) {
+        const userPackagesForUser = userPackagesMap[booking.userId] || [];
+
+        if (userPackagesForUser.length > 0) {
+          // Devolver el crédito al primer paquete disponible
+          const packageToUpdate = userPackagesForUser[0];
+          await this.prisma.userPackage.update({
+            where: { id: packageToUpdate.id },
+            data: {
+              remainingCredits: packageToUpdate.remainingCredits + 1,
+            },
+          });
+        }
+      }
+    }
+
+    // Eliminar el horario (esto también eliminará las reservas por CASCADE)
     return this.prisma.classSchedule.delete({
       where: { id },
     });

@@ -128,6 +128,18 @@ export class AuthService {
       throw new ConflictException(`La cédula ${cedula} ya está registrada`);
     }
 
+    // Validar teléfono duplicado si se proporciona
+    if (telephone) {
+      const foundTelephone = await this.prisma.user.findFirst({
+        where: { telephone },
+      });
+      if (foundTelephone) {
+        throw new ConflictException(
+          `El teléfono ${telephone} ya está registrado`,
+        );
+      }
+    }
+
     const ankoOrg = await this.prisma.organization.findFirst({
       where: { name: 'Anko' },
     });
@@ -226,6 +238,81 @@ export class AuthService {
     });
 
     return { message: 'Correo verificado exitosamente.' };
+  }
+
+  async resendVerificationEmail(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      // Por seguridad, no revelamos si el email existe o no
+      return {
+        message:
+          'Si el email existe en nuestra base de datos, recibirás un nuevo enlace de verificación.',
+      };
+    }
+
+    if (user.isVerified) {
+      return {
+        message: 'Tu cuenta ya está verificada.',
+      };
+    }
+
+    // Generar nuevo token de verificación
+    const verificationToken = uuidv4();
+    const verificationTokenExpiresAt = new Date(
+      Date.now() + 24 * 60 * 60 * 1000, // 24 horas
+    );
+
+    // Actualizar token en la base de datos
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        verificationToken,
+        verificationTokenExpiresAt,
+      },
+    });
+
+    // Construir enlace de verificación
+    const verificationLink = `${this.configService.get<string>(
+      'FRONTEND_URL',
+    )}/verify-email/${verificationToken}`;
+
+    try {
+      await this.emailService.sendEmail({
+        to: user.email,
+        subject: `¡Bienvenido a Anko, ${user.firstName}!`,
+        templateName: 'user-verification',
+        replacements: {
+          name: user.firstName,
+          verificationLink,
+        },
+      });
+
+      return {
+        message:
+          'Se ha enviado un nuevo enlace de verificación a tu correo electrónico.',
+      };
+    } catch (emailError) {
+      console.error(
+        `[Reenvío de verificación] No se pudo enviar el correo a ${user.email}:`,
+        emailError,
+      );
+
+      // Limpiar token si falla el envío
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          verificationToken: null,
+          verificationTokenExpiresAt: null,
+        },
+      });
+
+      throw new BadRequestException(
+        'No se pudo enviar el correo de verificación. Por favor, intenta nuevamente.',
+      );
+    }
   }
 
   async logout(userId: string): Promise<{ message: string }> {

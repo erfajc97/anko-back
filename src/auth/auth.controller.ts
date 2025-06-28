@@ -18,6 +18,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ResendVerificationDto } from './dto/resend-verification.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -61,6 +62,17 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async verifyEmail(@Param('token') token: string) {
     return this.authService.verifyEmail(token);
+  }
+
+  @Post('resend-verification')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  async resendVerificationEmail(
+    @Body() resendVerificationDto: ResendVerificationDto,
+  ) {
+    return this.authService.resendVerificationEmail(
+      resendVerificationDto.email,
+    );
   }
 
   @Post('forgot-password')

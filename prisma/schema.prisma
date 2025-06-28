@@ -12,7 +12,7 @@ model User {
   id                          String                   @id @default(uuid())
   email                       String                   @unique
   cedula                      String?                  @unique
-  telephone                   String?
+  telephone                   String?                  @unique
   firstName                   String
   lastName                    String?
   createdAt                   DateTime                 @default(now())

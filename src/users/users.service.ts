@@ -42,6 +42,15 @@ export class UsersService {
       throw new ConflictException('La cédula ya está registrada');
     }
 
+    // Verificar si el teléfono ya existe
+    const existingUserByTelephone = await this.prisma.user.findFirst({
+      where: { telephone: createUserDto.telephone },
+    });
+
+    if (existingUserByTelephone) {
+      throw new ConflictException('El teléfono ya está registrado');
+    }
+
     // Hash de la contraseña
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 

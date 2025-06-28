@@ -41,6 +41,17 @@ export class BookingsService {
       targetUserId = targetUser.id;
     }
 
+    // Verificar si el usuario está verificado
+    const targetUser = await this.prisma.user.findUnique({
+      where: { id: targetUserId },
+    });
+
+    if (!targetUser.isVerified) {
+      throw new BadRequestException(
+        'Debes verificar tu correo primero antes de hacer una reserva',
+      );
+    }
+
     // Verificar si el horario de clase existe
     const classSchedule = await this.prisma.classSchedule.findUnique({
       where: { id: classScheduleId },

@@ -67,7 +67,7 @@ async function main() {
       lastName: 'Doe',
       password: await hashData('qwerty'),
       type: 'USER',
-      telephone: '123456789',
+      telephone: '987654321',
       isVerified: true,
       memberships: {
         create: {
