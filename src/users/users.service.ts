@@ -81,6 +81,8 @@ export class UsersService {
         templateName: 'user-verification',
         replacements: {
           name: newUser.firstName,
+          email: newUser.email,
+          password: createUserDto.password, // Contraseña sin hashear
           verificationLink,
         },
       });

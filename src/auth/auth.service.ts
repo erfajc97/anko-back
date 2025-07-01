@@ -192,6 +192,8 @@ export class AuthService {
         templateName: 'user-verification',
         replacements: {
           name: newUser.firstName,
+          email: newUser.email,
+          password: password, // Contraseña sin hashear
           verificationLink,
         },
       });
@@ -286,6 +288,8 @@ export class AuthService {
         templateName: 'user-verification',
         replacements: {
           name: user.firstName,
+          email: user.email,
+          password: 'Tu contraseña actual', // No podemos mostrar la contraseña hasheada
           verificationLink,
         },
       });
