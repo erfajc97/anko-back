@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Delete,
   Body,
   Param,
   UseGuards,
@@ -41,6 +42,17 @@ export class PaymentsController {
   @Get('my-pending-payments')
   async getMyPendingPayments(@Request() req) {
     return this.paymentsService.getUserPendingPayments(req.user.id);
+  }
+
+  @Delete('my-pending-payments/:transactionId')
+  async deleteMyPendingPayment(
+    @Request() req,
+    @Param('transactionId') transactionId: string,
+  ) {
+    return this.paymentsService.deleteUserPendingPayment(
+      req.user.id,
+      transactionId,
+    );
   }
 
   @Post('update-status')

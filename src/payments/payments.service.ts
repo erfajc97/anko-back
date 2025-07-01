@@ -183,4 +183,39 @@ export class PaymentsService {
 
     return updatedTransaction;
   }
+
+  async deleteUserPendingPayment(userId: string, transactionId: string) {
+    // Buscar la transacción y verificar que pertenece al usuario
+    const transaction = await this.prisma.paymentTransaction.findFirst({
+      where: {
+        id: transactionId,
+        userId,
+        status: 'pending',
+      },
+      include: {
+        package: true,
+      },
+    });
+
+    if (!transaction) {
+      throw new NotFoundException(
+        `Transacción pendiente con ID "${transactionId}" no encontrada o no pertenece al usuario`,
+      );
+    }
+
+    // Eliminar la transacción
+    await this.prisma.paymentTransaction.delete({
+      where: { id: transactionId },
+    });
+
+    return {
+      message: 'Transacción pendiente eliminada exitosamente',
+      deletedTransaction: {
+        id: transaction.id,
+        packageName: transaction.package.name,
+        amount: transaction.amount,
+        createdAt: transaction.createdAt,
+      },
+    };
+  }
 }

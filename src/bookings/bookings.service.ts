@@ -235,9 +235,7 @@ export class BookingsService {
     const bookings = await this.prisma.booking.findMany({
       where: { userId },
       orderBy: {
-        classSchedule: {
-          startTime: 'asc',
-        },
+        createdAt: 'desc',
       },
       include: {
         classSchedule: {
