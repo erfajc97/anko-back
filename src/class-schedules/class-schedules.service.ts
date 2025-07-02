@@ -39,9 +39,70 @@ export class ClassSchedulesService {
       d.setDate(d.getDate() + 1);
     }
 
-    // Calcular las horas de la jornada para cada día
+    // Validar solapamientos ANTES de crear cualquier horario
+    const overlappingSchedules = [];
+    for (const day of days) {
+      // Definir el rango de horas para este día
+      const dayStart = new Date(day);
+      const dayEnd = new Date(day);
+
+      if (day.getTime() === days[0].getTime()) {
+        // Primer día: usar la hora de start
+        dayStart.setHours(start.getHours(), start.getMinutes(), 0, 0);
+      } else {
+        // Días intermedios: usar la hora de inicio de la jornada
+        dayStart.setHours(start.getHours(), start.getMinutes(), 0, 0);
+      }
+
+      if (day.getTime() === days[days.length - 1].getTime()) {
+        // Último día: usar la hora de end
+        dayEnd.setHours(end.getHours(), end.getMinutes(), 0, 0);
+      } else {
+        // Días intermedios: usar la hora de fin de la jornada
+        dayEnd.setHours(end.getHours(), end.getMinutes(), 0, 0);
+      }
+
+      // Verificar solapamientos para cada bloque de 1 hora
+      let current = new Date(dayStart);
+      while (current < dayEnd) {
+        const slotStart = new Date(current);
+        const slotEnd = new Date(current);
+        slotEnd.setHours(slotEnd.getHours() + 1);
+        if (slotEnd > dayEnd) break;
+
+        const overlapping = await this.prisma.classSchedule.findFirst({
+          where: {
+            teacherId,
+            OR: [
+              {
+                startTime: { lt: slotEnd },
+                endTime: { gt: slotStart },
+              },
+            ],
+          },
+        });
+
+        if (overlapping) {
+          overlappingSchedules.push({
+            date: slotStart.toISOString().slice(0, 10),
+            startTime: slotStart.toISOString().slice(11, 16),
+            endTime: slotEnd.toISOString().slice(11, 16),
+            message: `El profesor ya tiene un horario asignado en este bloque: ${slotStart.toISOString().slice(0, 10)} de ${slotStart.toISOString().slice(11, 16)} a ${slotEnd.toISOString().slice(11, 16)}.`,
+          });
+        }
+        current = slotEnd;
+      }
+    }
+
+    // Si hay solapamientos, lanzar error y no crear ningún horario
+    if (overlappingSchedules.length > 0) {
+      throw new Error(
+        `No se pueden crear horarios debido a solapamientos existentes:\n${overlappingSchedules.map((block) => block.message).join('\n')}`,
+      );
+    }
+
+    // Si no hay solapamientos, crear todos los horarios
     const createdSchedules = [];
-    const failedBlocks = [];
     for (const day of days) {
       // Definir el rango de horas para este día
       const dayStart = new Date(day);
@@ -70,43 +131,25 @@ export class ClassSchedulesService {
         const slotEnd = new Date(current);
         slotEnd.setHours(slotEnd.getHours() + 1);
         if (slotEnd > dayEnd) break;
-        // Validar solapamiento
-        const overlapping = await this.prisma.classSchedule.findFirst({
-          where: {
-            teacherId,
-            OR: [
-              {
-                startTime: { lt: slotEnd },
-                endTime: { gt: slotStart },
-              },
-            ],
+
+        const schedule = await this.prisma.classSchedule.create({
+          data: {
+            teacher: { connect: { id: teacherId } },
+            title,
+            startTime: slotStart,
+            endTime: slotEnd,
+            maxCapacity,
           },
         });
-        if (overlapping) {
-          failedBlocks.push({
-            date: slotStart.toISOString().slice(0, 10),
-            startTime: slotStart.toISOString().slice(11, 16),
-            endTime: slotEnd.toISOString().slice(11, 16),
-            message: `El profesor ya tiene un horario asignado en este bloque: ${slotStart.toISOString().slice(0, 10)} de ${slotStart.toISOString().slice(11, 16)} a ${slotEnd.toISOString().slice(11, 16)}.`,
-          });
-        } else {
-          const schedule = await this.prisma.classSchedule.create({
-            data: {
-              teacher: { connect: { id: teacherId } },
-              title,
-              startTime: slotStart,
-              endTime: slotEnd,
-              maxCapacity,
-            },
-          });
-          createdSchedules.push(schedule);
-        }
+        createdSchedules.push(schedule);
         current = slotEnd;
       }
     }
+
     return {
       created: createdSchedules,
-      failed: failedBlocks,
+      failed: [],
+      message: `Se crearon ${createdSchedules.length} horarios exitosamente.`,
     };
   }
 
@@ -227,8 +270,20 @@ export class ClassSchedulesService {
 
   async findSchedulesByDateRange(startDate?: string, endDate?: string) {
     // Calcular rango de fechas si no se proveen
+    const now = new Date();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    // Mantener el primer día 7 horas más de lo que se actualizaba antes
+    // Si es después de las 7 AM del día siguiente, entonces empezar desde mañana
+    const tomorrow7AM = new Date(today);
+    tomorrow7AM.setDate(tomorrow7AM.getDate() + 1);
+    tomorrow7AM.setHours(7, 0, 0, 0);
+
+    if (now >= tomorrow7AM) {
+      today.setDate(today.getDate() + 1);
+    }
+
     const daysArr = [];
     const weekDays = [
       'domingo',
@@ -335,8 +390,20 @@ export class ClassSchedulesService {
 
   async findSchedulesByDateRangeForAdmin(startDate?: string, endDate?: string) {
     // Calcular rango de fechas si no se proveen
+    const now = new Date();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    // Mantener el primer día 7 horas más de lo que se actualizaba antes
+    // Si es después de las 7 AM del día siguiente, entonces empezar desde mañana
+    const tomorrow7AM = new Date(today);
+    tomorrow7AM.setDate(tomorrow7AM.getDate() + 1);
+    tomorrow7AM.setHours(7, 0, 0, 0);
+
+    if (now >= tomorrow7AM) {
+      today.setDate(today.getDate() + 1);
+    }
+
     const daysArr = [];
     const weekDays = [
       'domingo',
