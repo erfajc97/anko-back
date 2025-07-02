@@ -19,20 +19,20 @@ async function clearDatabase() {
 async function main() {
   await clearDatabase();
 
-  console.log('Seeding class packages...');
-  const packagesData = [
-    { name: 'ANKO PASS', price: 16, classCredits: 1, validityDays: 15 },
-    { name: 'WELLNESS PACK', price: 59, classCredits: 4, validityDays: 30 },
-    { name: 'STRONG PACK', price: 110, classCredits: 8, validityDays: 30 },
-    { name: 'GROW PACK', price: 153, classCredits: 12, validityDays: 30 },
-    { name: 'EXTRA PACK', price: 190, classCredits: 16, validityDays: 30 },
-    { name: 'UNLIMITED PACK', price: 233, classCredits: 20, validityDays: 30 },
-  ];
+  // console.log('Seeding class packages...');
+  // const packagesData = [
+  //   { name: 'ANKO PASS', price: 16, classCredits: 1, validityDays: 15 },
+  //   { name: 'WELLNESS PACK', price: 59, classCredits: 4, validityDays: 30 },
+  //   { name: 'STRONG PACK', price: 110, classCredits: 8, validityDays: 30 },
+  //   { name: 'GROW PACK', price: 153, classCredits: 12, validityDays: 30 },
+  //   { name: 'EXTRA PACK', price: 190, classCredits: 16, validityDays: 30 },
+  //   { name: 'UNLIMITED PACK', price: 233, classCredits: 20, validityDays: 30 },
+  // ];
 
-  await prisma.classPackage.createMany({
-    data: packagesData,
-  });
-  console.log('Class packages seeded.');
+  // await prisma.classPackage.createMany({
+  //   // data: packagesData,
+  // });
+  // console.log('Class packages seeded.');
 
   const ankoOrg = await prisma.organization.create({
     data: {
