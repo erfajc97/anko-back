@@ -45,6 +45,46 @@ interface BookingConfirmationData {
   bookingId: string;
 }
 
+interface BookingCancellationData {
+  userEmail: string;
+  userName: string;
+  className: string;
+  classDate: string;
+  classTime: string;
+  classDuration: string;
+  teacherName: string;
+  teacherSpecialty: string;
+  bookingId: string;
+}
+
+interface AdminBookingNotificationData {
+  userName: string;
+  userEmail: string;
+  userTelephone: string;
+  userCedula: string;
+  className: string;
+  classDate: string;
+  classTime: string;
+  classDuration: string;
+  teacherName: string;
+  bookingId: string;
+  bookingDate: string;
+}
+
+interface AdminBookingCancellationData {
+  userName: string;
+  userEmail: string;
+  userTelephone: string;
+  userCedula: string;
+  className: string;
+  classDate: string;
+  classTime: string;
+  classDuration: string;
+  teacherName: string;
+  bookingId: string;
+  cancellationDate: string;
+}
+
 @Injectable()
 export class EmailService {
   private readonly resend: Resend;
@@ -177,6 +217,76 @@ export class EmailService {
       to: data.userEmail,
       subject: '¡Reserva Confirmada! - Anko Studio',
       templateName: 'booking-confirmation',
+      replacements,
+    });
+  }
+
+  async sendBookingCancellationEmail(data: BookingCancellationData) {
+    const replacements = {
+      userName: data.userName,
+      className: data.className,
+      classDate: data.classDate,
+      classTime: data.classTime,
+      classDuration: data.classDuration,
+      teacherName: data.teacherName,
+      teacherSpecialty: data.teacherSpecialty,
+      bookingId: data.bookingId,
+    };
+
+    return this.sendEmail({
+      to: data.userEmail,
+      subject: 'Reserva Cancelada - Anko Studio',
+      templateName: 'booking-cancellation',
+      replacements,
+    });
+  }
+
+  async sendAdminBookingNotification(data: AdminBookingNotificationData) {
+    const adminEmail = this.configService.get<string>('CONTACT_RECEIVER_EMAIL');
+
+    const replacements = {
+      userName: data.userName,
+      userEmail: data.userEmail,
+      userTelephone: data.userTelephone,
+      userCedula: data.userCedula,
+      className: data.className,
+      classDate: data.classDate,
+      classTime: data.classTime,
+      classDuration: data.classDuration,
+      teacherName: data.teacherName,
+      bookingId: data.bookingId,
+      bookingDate: data.bookingDate,
+    };
+
+    return this.sendEmail({
+      to: adminEmail,
+      subject: 'Nueva Reserva Realizada - Anko Studio',
+      templateName: 'admin-booking-notification',
+      replacements,
+    });
+  }
+
+  async sendAdminBookingCancellation(data: AdminBookingCancellationData) {
+    const adminEmail = this.configService.get<string>('CONTACT_RECEIVER_EMAIL');
+
+    const replacements = {
+      userName: data.userName,
+      userEmail: data.userEmail,
+      userTelephone: data.userTelephone,
+      userCedula: data.userCedula,
+      className: data.className,
+      classDate: data.classDate,
+      classTime: data.classTime,
+      classDuration: data.classDuration,
+      teacherName: data.teacherName,
+      bookingId: data.bookingId,
+      cancellationDate: data.cancellationDate,
+    };
+
+    return this.sendEmail({
+      to: adminEmail,
+      subject: 'Reserva Cancelada - Anko Studio',
+      templateName: 'admin-booking-cancellation',
       replacements,
     });
   }

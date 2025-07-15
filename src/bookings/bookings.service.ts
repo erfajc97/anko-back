@@ -111,7 +111,7 @@ export class BookingsService {
       },
     });
 
-    // Enviar correo de confirmación
+    // Enviar correos de confirmación
     try {
       const classDate = new Date(
         booking.classSchedule.startTime,
@@ -136,6 +136,15 @@ export class BookingsService {
         (endTime.getTime() - startTime.getTime()) / (1000 * 60),
       );
 
+      const bookingDate = new Date().toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      // Enviar correo al usuario
       await this.emailService.sendBookingConfirmationEmail({
         userEmail: booking.user.email,
         userName:
@@ -148,8 +157,24 @@ export class BookingsService {
         teacherSpecialty: 'Sin especificar', // El esquema no tiene campo specialty
         bookingId: booking.id,
       });
+
+      // Enviar correo al administrador
+      await this.emailService.sendAdminBookingNotification({
+        userName:
+          `${booking.user.firstName} ${booking.user.lastName || ''}`.trim(),
+        userEmail: booking.user.email,
+        userTelephone: booking.user.telephone || 'No especificado',
+        userCedula: booking.user.cedula || 'No especificado',
+        className: booking.classSchedule.title,
+        classDate: classDate,
+        classTime: classTime,
+        classDuration: `${durationMinutes} minutos`,
+        teacherName: `${booking.classSchedule.teacher.firstName} ${booking.classSchedule.teacher.lastName}`,
+        bookingId: booking.id,
+        bookingDate: bookingDate,
+      });
     } catch (error) {
-      console.error('Error sending booking confirmation email:', error);
+      console.error('Error sending booking confirmation emails:', error);
       // No lanzamos el error para no afectar la creación de la reserva
     }
 
@@ -247,7 +272,11 @@ export class BookingsService {
       where: { id },
       include: {
         user: true,
-        classSchedule: true,
+        classSchedule: {
+          include: {
+            teacher: true,
+          },
+        },
       },
     });
 
@@ -273,6 +302,73 @@ export class BookingsService {
     } catch (error) {
       console.error('Error refunding class credit:', error);
       // No lanzamos el error para no interrumpir la cancelación
+    }
+
+    // Enviar correos de cancelación
+    try {
+      const classDate = new Date(
+        booking.classSchedule.startTime,
+      ).toLocaleDateString('es-ES', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+
+      const classTime = new Date(
+        booking.classSchedule.startTime,
+      ).toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      // Calcular duración en minutos
+      const startTime = new Date(booking.classSchedule.startTime);
+      const endTime = new Date(booking.classSchedule.endTime);
+      const durationMinutes = Math.round(
+        (endTime.getTime() - startTime.getTime()) / (1000 * 60),
+      );
+
+      const cancellationDate = new Date().toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      // Enviar correo al usuario
+      await this.emailService.sendBookingCancellationEmail({
+        userEmail: booking.user.email,
+        userName:
+          `${booking.user.firstName} ${booking.user.lastName || ''}`.trim(),
+        className: booking.classSchedule.title,
+        classDate: classDate,
+        classTime: classTime,
+        classDuration: `${durationMinutes} minutos`,
+        teacherName: `${booking.classSchedule.teacher.firstName} ${booking.classSchedule.teacher.lastName}`,
+        teacherSpecialty: 'Sin especificar',
+        bookingId: booking.id,
+      });
+
+      // Enviar correo al administrador
+      await this.emailService.sendAdminBookingCancellation({
+        userName:
+          `${booking.user.firstName} ${booking.user.lastName || ''}`.trim(),
+        userEmail: booking.user.email,
+        userTelephone: booking.user.telephone || 'No especificado',
+        userCedula: booking.user.cedula || 'No especificado',
+        className: booking.classSchedule.title,
+        classDate: classDate,
+        classTime: classTime,
+        classDuration: `${durationMinutes} minutos`,
+        teacherName: `${booking.classSchedule.teacher.firstName} ${booking.classSchedule.teacher.lastName}`,
+        bookingId: booking.id,
+        cancellationDate: cancellationDate,
+      });
+    } catch (error) {
+      console.error('Error sending booking cancellation emails:', error);
+      // No lanzamos el error para no afectar la cancelación de la reserva
     }
 
     return { message: 'Reserva cancelada exitosamente' };

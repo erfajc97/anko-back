@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva Reserva - Anko Studio</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        .message {
+            font-size: 16px;
+            margin-bottom: 25px;
+            line-height: 1.8;
+        }
+        .booking-details {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+            border-left: 4px solid #27ae60;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 5px 0;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .detail-value {
+            color: #34495e;
+        }
+        .user-details {
+            background-color: #e8f5e8;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+            border-left: 4px solid #27ae60;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ecf0f1;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        .contact-info {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        .highlight {
+            color: #27ae60;
+            font-weight: 600;
+        }
+        .note {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">ANKO STUDIO</div>
+            <div class="subtitle">Nueva Reserva Realizada</div>
+        </div>
+
+        <div class="content">
+            <div class="greeting">Hola Administrador,</div>
+            
+            <div class="message">
+                Se ha realizado una nueva reserva en el sistema. A continuación 
+                encontrarás los detalles de la reserva y la información del usuario.
+            </div>
+
+            <div class="user-details">
+                <h3 style="margin-top: 0; color: #27ae60;">Información del Usuario</h3>
+                <div class="detail-row">
+                    <span class="detail-label">Nombre:</span>
+                    <span class="detail-value">{{userName}}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Email:</span>
+                    <span class="detail-value">{{userEmail}}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Teléfono:</span>
+                    <span class="detail-value">{{userTelephone}}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Cédula:</span>
+                    <span class="detail-value">{{userCedula}}</span>
+                </div>
+            </div>
+
+            <div class="booking-details">
+                <h3 style="margin-top: 0; color: #27ae60;">Detalles de la Reserva</h3>
+                <div class="detail-row">
+                    <span class="detail-label">Clase:</span>
+                    <span class="detail-value">{{className}}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Fecha:</span>
+                    <span class="detail-value">{{classDate}}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Hora:</span>
+                    <span class="detail-value">{{classTime}}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Duración:</span>
+                    <span class="detail-value">{{classDuration}}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Profesor:</span>
+                    <span class="detail-value">{{teacherName}}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">ID de Reserva:</span>
+                    <span class="detail-value">{{bookingId}}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Fecha de Reserva:</span>
+                    <span class="detail-value">{{bookingDate}}</span>
+                </div>
+            </div>
+
+            <div class="note">
+                <strong>Nota:</strong> Esta es una notificación automática del sistema. 
+                El usuario ya ha recibido su confirmación de reserva.
+            </div>
+        </div>
+
+        <div class="footer">
+            <div>Anko Studio - Sistema de Notificaciones</div>
+            <div class="contact-info">
+                <div>📧 info@ankostudioec.com</div>
+                <div>📱 +593 99 123 4567</div>
+                <div>📍 Quito, Ecuador</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 
