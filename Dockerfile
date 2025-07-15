@@ -22,4 +22,4 @@ RUN npm run build
 EXPOSE 3000
 
 # Use CMD to run prisma deploy and start the app
-CMD ["sh", "-c", "npm run prisma:deploy && npm run start:prod"]
+CMD ["sh", "-c", "npm run start:prod"]

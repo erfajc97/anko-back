@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { UserPackagesService } from '../user-packages/user-packages.service';
+import { EmailService } from '../email/email.service';
 import { UserType } from '@prisma/client';
 
 interface AuthenticatedUser {
@@ -20,6 +21,7 @@ export class BookingsService {
   constructor(
     private prisma: PrismaService,
     private userPackagesService: UserPackagesService,
+    private emailService: EmailService,
   ) {}
 
   async create(createBookingDto: CreateBookingDto, user: AuthenticatedUser) {
@@ -89,7 +91,8 @@ export class BookingsService {
     // Consumir una clase del paquete del usuario
     await this.userPackagesService.consumeClass(targetUserId);
 
-    return this.prisma.booking.create({
+    // Crear la reserva
+    const booking = await this.prisma.booking.create({
       data: {
         user: {
           connect: { id: targetUserId },
@@ -107,6 +110,50 @@ export class BookingsService {
         },
       },
     });
+
+    // Enviar correo de confirmación
+    try {
+      const classDate = new Date(
+        booking.classSchedule.startTime,
+      ).toLocaleDateString('es-ES', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+
+      const classTime = new Date(
+        booking.classSchedule.startTime,
+      ).toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      // Calcular duración en minutos
+      const startTime = new Date(booking.classSchedule.startTime);
+      const endTime = new Date(booking.classSchedule.endTime);
+      const durationMinutes = Math.round(
+        (endTime.getTime() - startTime.getTime()) / (1000 * 60),
+      );
+
+      await this.emailService.sendBookingConfirmationEmail({
+        userEmail: booking.user.email,
+        userName:
+          `${booking.user.firstName} ${booking.user.lastName || ''}`.trim(),
+        className: booking.classSchedule.title,
+        classDate: classDate,
+        classTime: classTime,
+        classDuration: `${durationMinutes} minutos`,
+        teacherName: `${booking.classSchedule.teacher.firstName} ${booking.classSchedule.teacher.lastName}`,
+        teacherSpecialty: 'Sin especificar', // El esquema no tiene campo specialty
+        bookingId: booking.id,
+      });
+    } catch (error) {
+      console.error('Error sending booking confirmation email:', error);
+      // No lanzamos el error para no afectar la creación de la reserva
+    }
+
+    return booking;
   }
 
   async findAll(page: number, perPage: number) {

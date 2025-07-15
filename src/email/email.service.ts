@@ -33,6 +33,18 @@ interface AdminPackageNotificationData {
   purchaseDate: string;
 }
 
+interface BookingConfirmationData {
+  userEmail: string;
+  userName: string;
+  className: string;
+  classDate: string;
+  classTime: string;
+  classDuration: string;
+  teacherName: string;
+  teacherSpecialty: string;
+  bookingId: string;
+}
+
 @Injectable()
 export class EmailService {
   private readonly resend: Resend;
@@ -145,6 +157,26 @@ export class EmailService {
       to,
       subject: 'Nuevo mensaje de contacto desde la landing',
       templateName: 'contact-form',
+      replacements,
+    });
+  }
+
+  async sendBookingConfirmationEmail(data: BookingConfirmationData) {
+    const replacements = {
+      userName: data.userName,
+      className: data.className,
+      classDate: data.classDate,
+      classTime: data.classTime,
+      classDuration: data.classDuration,
+      teacherName: data.teacherName,
+      teacherSpecialty: data.teacherSpecialty,
+      bookingId: data.bookingId,
+    };
+
+    return this.sendEmail({
+      to: data.userEmail,
+      subject: '¡Reserva Confirmada! - Anko Studio',
+      templateName: 'booking-confirmation',
       replacements,
     });
   }
