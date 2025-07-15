@@ -1,161 +1,161 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reserva Cancelada - Anko Studio</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        .container {
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .logo {
-            font-size: 28px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-        .subtitle {
-            color: #7f8c8d;
-            font-size: 16px;
-        }
-        .content {
-            margin-bottom: 30px;
-        }
-        .greeting {
-            font-size: 18px;
-            margin-bottom: 20px;
-            color: #2c3e50;
-        }
-        .message {
-            font-size: 16px;
-            margin-bottom: 25px;
-            line-height: 1.8;
-        }
-        .booking-details {
-            background-color: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 25px 0;
-            border-left: 4px solid #e74c3c;
-        }
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            padding: 5px 0;
-        }
-        .detail-label {
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        .detail-value {
-            color: #34495e;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #ecf0f1;
-            color: #7f8c8d;
-            font-size: 14px;
-        }
-        .contact-info {
-            margin-top: 15px;
-            font-size: 14px;
-        }
-        .highlight {
-            color: #e74c3c;
-            font-weight: 600;
-        }
-        .note {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-            font-size: 14px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reserva Cancelada</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+      line-height: 1.6;
+      color: #333;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 30px;
+      background-color: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .logo {
+      color: #B77167;
+      font-family: Georgia, 'Times New Roman', Times, serif;
+      font-style: italic;
+      font-size: 52px;
+      letter-spacing: 3px;
+    }
+    .content h1 {
+      color: #333;
+      font-size: 24px;
+      font-weight: 600;
+      text-align: center;
+    }
+    .content p {
+      margin-bottom: 20px;
+      font-size: 16px;
+    }
+    .booking-details {
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 25px 0;
+      border-left: 4px solid #e74c3c;
+    }
+    .booking-details h3 {
+      color: #e74c3c;
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-size: 18px;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #e9ecef;
+    }
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+    .detail-label {
+      font-weight: 600;
+      color: #555;
+    }
+    .detail-value {
+      color: #333;
+    }
+    .cancellation-message {
+      background-color: #fdf2f2;
+      border: 1px solid #fadbd8;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 20px 0;
+      color: #c53030;
+    }
+    .note {
+      background-color: #fff3cd;
+      border: 1px solid #ffeaa7;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 20px 0;
+      color: #856404;
+    }
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #777;
+      margin-top: 30px;
+    }
+    .footer p {
+      margin: 5px 0;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">ANKO STUDIO</div>
-            <div class="subtitle">Tu reserva ha sido cancelada</div>
+  <div class="container">
+    <div class="header">
+      <div class="logo">ANKO</div>
+    </div>
+    <div class="content">
+      <h1>Reserva Cancelada</h1>
+
+      <p>Hola {{userName}},</p>
+      
+      <div class="cancellation-message">
+        <strong>❌ Reserva cancelada</strong><br>
+        Tu reserva ha sido cancelada exitosamente. Tu crédito de clase ha sido devuelto a tu cuenta.
+      </div>
+
+      <div class="booking-details">
+        <h3>📅 Detalles de la Clase Cancelada</h3>
+        <div class="detail-row">
+          <span class="detail-label">Título de la Clase:</span>
+          <span class="detail-value">{{className}}</span>
         </div>
-
-        <div class="content">
-            <div class="greeting">Hola {{userName}},</div>
-            
-            <div class="message">
-                Te confirmamos que tu reserva ha sido cancelada exitosamente. 
-                Tu crédito de clase ha sido devuelto a tu cuenta y podrás utilizarlo 
-                para futuras reservas.
-            </div>
-
-            <div class="booking-details">
-                <div class="detail-row">
-                    <span class="detail-label">Clase:</span>
-                    <span class="detail-value">{{className}}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Fecha:</span>
-                    <span class="detail-value">{{classDate}}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Hora:</span>
-                    <span class="detail-value">{{classTime}}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Duración:</span>
-                    <span class="detail-value">{{classDuration}}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Profesor:</span>
-                    <span class="detail-value">{{teacherName}}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">ID de Reserva:</span>
-                    <span class="detail-value">{{bookingId}}</span>
-                </div>
-            </div>
-
-            <div class="note">
-                <strong>Nota importante:</strong> Tu crédito de clase ha sido devuelto 
-                automáticamente a tu cuenta. Puedes verificar tu saldo actual en tu 
-                perfil de usuario.
-            </div>
-
-            <div class="message">
-                Si tienes alguna pregunta o necesitas asistencia, no dudes en 
-                contactarnos. Estamos aquí para ayudarte.
-            </div>
+        <div class="detail-row">
+          <span class="detail-label">Fecha:</span>
+          <span class="detail-value">{{classDate}}</span>
         </div>
-
-        <div class="footer">
-            <div>Gracias por elegir Anko Studio</div>
-            <div class="contact-info">
-                <div>📧 info@ankostudioec.com</div>
-                <div>📱 +593 99 123 4567</div>
-                <div>📍 Quito, Ecuador</div>
-            </div>
+        <div class="detail-row">
+          <span class="detail-label">Hora:</span>
+          <span class="detail-value">{{classTime}}</span>
         </div>
+        <div class="detail-row">
+          <span class="detail-label">Duración:</span>
+          <span class="detail-value">{{classDuration}}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Profesor:</span>
+          <span class="detail-value">{{teacherName}}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">ID de Reserva:</span>
+          <span class="detail-value">{{bookingId}}</span>
+        </div>
+      </div>
+
+      <div class="note">
+        <strong>✅ Crédito devuelto</strong><br>
+        Tu crédito de clase ha sido devuelto automáticamente a tu cuenta. 
+        Puedes verificar tu saldo actual en tu perfil de usuario y hacer una nueva reserva cuando lo desees.
+      </div>
+
+      <p>Si tienes alguna pregunta o necesitas asistencia, no dudes en contactarnos.</p>
+      
+      <p>Saludos,<br>El equipo de Anko</p>
+    </div>
+    <div class="footer">
+      <p>&copy; 2024 Anko Studio. Todos los derechos reservados.</p>
+      <p>Anko Studio, Guayaquil, Ecuador</p>
+    </div>
     </div>
 </body>
 </html> 
